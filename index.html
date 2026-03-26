@@ -1224,7 +1224,11 @@ function addField(){
 }
 
 // ── Utils ──────────────────────────────────────────────────
-function setContent(html) { document.getElementById('content').innerHTML = html; }
+function setContent(html) {
+  const el = document.getElementById('content');
+  el.innerHTML = html;
+  el.scrollTop = 0;
+}
 function updateHdr(title, btns=[]) {
   document.querySelector('.hdr-left h1').textContent = title;
   document.getElementById('hdr-actions').innerHTML = btns.join('');
