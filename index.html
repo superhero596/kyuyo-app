@@ -1084,16 +1084,27 @@ function renderMonthlyChart(yd, yr) {
 
   const tip = document.getElementById('tip-m');
   const onTap = e => {
-    const rect=cvs.getBoundingClientRect();
-    const cx=(e.touches?e.touches[0].clientX:e.clientX)-rect.left;
-    const col=Math.floor((cx-PL)/gW);
-    if(col<0||col>11||!months[col].has){tip.classList.remove('vis');return;}
-    const m=months[col];
-    tip.innerHTML=`<b>${yr}年${col+1}月</b><br>給与額面 ¥${N(m.sg)}<br>給与手取 ¥${N(m.sn)}${m.bg?`<br>🎁賞与額面 ¥${N(m.bg)}<br>🎁賞与手取 ¥${N(m.bn)}`:''}`;
-    tip.style.left=Math.min(cx,W-150)+'px'; tip.style.top=(PT-4)+'px';
-    tip.classList.add('vis'); setTimeout(()=>tip.classList.remove('vis'),2600);
+    e.preventDefault();
+    const rect = cvs.getBoundingClientRect();
+    const clientX = e.changedTouches ? e.changedTouches[0].clientX
+                  : e.touches        ? e.touches[0].clientX
+                  : e.clientX;
+    const cx = clientX - rect.left;
+    const col = Math.floor((cx - PL) / gW);
+    if (col < 0 || col > 11 || !months[col].has) { tip.classList.remove('vis'); return; }
+    const m = months[col];
+    let html = `<b>${yr}年${col+1}月</b><br>💴 額面 ¥${N(m.sg)}<br>💴 手取 ¥${N(m.sn)}`;
+    if (m.bg) html += `<br>🎁 賞与額面 ¥${N(m.bg)}<br>🎁 賞与手取 ¥${N(m.bn)}`;
+    tip.innerHTML = html;
+    const tipW = 155;
+    const left = Math.min(Math.max(cx - tipW/2, 4), W - tipW - 4);
+    tip.style.left = left + 'px';
+    tip.style.top = (PT + 4) + 'px';
+    tip.classList.add('vis');
+    setTimeout(() => tip.classList.remove('vis'), 3000);
   };
-  cvs.onclick=onTap; cvs.ontouchend=e=>{e.preventDefault();onTap(e);};
+  cvs.addEventListener('touchend', onTap, { passive: false });
+  cvs.addEventListener('click', onTap);
 }
 
 function renderCmp() {
