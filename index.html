@@ -1227,7 +1227,10 @@ function addField(){
 function setContent(html) {
   const el = document.getElementById('content');
   el.innerHTML = html;
+  // iOS Safari対応: 複数の方法でスクロールをトップに戻す
   el.scrollTop = 0;
+  window.scrollTo(0, 0);
+  setTimeout(() => { el.scrollTop = 0; window.scrollTo(0, 0); }, 50);
 }
 function updateHdr(title, btns=[]) {
   document.querySelector('.hdr-left h1').textContent = title;
