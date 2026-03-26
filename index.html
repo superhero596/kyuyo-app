@@ -1101,10 +1101,13 @@ function renderMonthlyChart(yd, yr) {
     tip.style.left = left + 'px';
     tip.style.top = (PT + 4) + 'px';
     tip.classList.add('vis');
-    setTimeout(() => tip.classList.remove('vis'), 3000);
   };
   cvs.addEventListener('touchend', onTap, { passive: false });
   cvs.addEventListener('click', onTap);
+  // グラフ以外をタップしたら消える
+  const hideTip = e => { if (e.target !== cvs) tip.classList.remove('vis'); };
+  document.addEventListener('touchend', hideTip, { passive: true });
+  document.addEventListener('click', hideTip);
 }
 
 function renderCmp() {
