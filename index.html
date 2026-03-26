@@ -7,773 +7,1234 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="給与帳">
 <title>給与帳</title>
-<script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --ink: #0f0f0f;
-    --paper: #f5f2ed;
-    --card: #ffffff;
-    --accent: #2563d4;
-    --danger: #dc2626;
-    --muted: #6b7280;
-    --border: #e5e0d8;
-    --income: #166534;
-    --income-bg: #f0fdf4;
-    --deduct: #9f1239;
-    --deduct-bg: #fff1f2;
-    --gross-color: #2563d4;
-    --net-color: #16a34a;
-    --safe-top: env(safe-area-inset-top, 44px);
-    --safe-bottom: env(safe-area-inset-bottom, 34px);
-  }
-  * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-  html, body { font-family: 'Noto Sans JP', sans-serif; background: var(--paper); color: var(--ink); height: 100%; overscroll-behavior: none; margin: 0; padding: 0; }
-  #app { display: flex; flex-direction: column; height: 100dvh; }
+:root {
+  --ink: #111318;
+  --paper: #f4f1ec;
+  --card: #ffffff;
+  --accent: #1d4ed8;
+  --accent2: #0ea5e9;
+  --muted: #6b7280;
+  --border: #e2ddd6;
+  --gross: #1d4ed8;
+  --net: #059669;
+  --bonus-gross: #b45309;
+  --bonus-net: #d97706;
+  --danger: #dc2626;
+  --safe-top: env(safe-area-inset-top, 44px);
+  --safe-bot: env(safe-area-inset-bottom, 34px);
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+html, body { height: 100%; font-family: 'Noto Sans JP', sans-serif; background: var(--paper); color: var(--ink); overscroll-behavior: none; }
+#app { display: flex; flex-direction: column; height: 100dvh; }
 
-  .app-header { background: var(--ink); color: white; padding: calc(var(--safe-top) + 12px) 20px 16px; flex-shrink: 0; }
-  .app-header h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
-  .app-header .subtitle { font-size: 11px; opacity: 0.5; letter-spacing: 1px; text-transform: uppercase; margin-top: 2px; }
+/* ── Header ── */
+.hdr {
+  background: var(--ink); color: #fff;
+  padding: calc(var(--safe-top) + 10px) 18px 14px;
+  display: flex; align-items: flex-end; justify-content: space-between;
+  flex-shrink: 0;
+}
+.hdr-left h1 { font-size: 20px; font-weight: 900; letter-spacing: -0.5px; line-height: 1; }
+.hdr-left .sub { font-size: 10px; opacity: 0.4; letter-spacing: 1.5px; text-transform: uppercase; margin-top: 3px; }
+.hdr-right { display: flex; gap: 8px; }
+.hdr-btn {
+  width: 34px; height: 34px; border-radius: 50%; border: none;
+  background: rgba(255,255,255,0.12); color: white;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 16px;
+}
 
-  .tab-bar { display: flex; background: var(--ink); border-top: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; }
-  .tab-btn { flex: 1; padding: 9px 2px 11px; border: none; background: none; color: rgba(255,255,255,0.4); font-size: 9px; font-family: inherit; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; transition: color 0.2s; }
-  .tab-btn.active { color: white; }
-  .tab-btn svg { width: 20px; height: 20px; }
+/* ── Tab bar ── */
+.tab-bar { display: flex; background: var(--ink); border-top: 1px solid rgba(255,255,255,0.08); flex-shrink: 0; }
+.tab-btn {
+  flex: 1; padding: 9px 2px 11px; border: none; background: none;
+  color: rgba(255,255,255,0.35); font-size: 9px; font-family: inherit;
+  cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  transition: color 0.2s;
+}
+.tab-btn.active { color: white; }
+.tab-btn svg { width: 20px; height: 20px; }
 
-  .content-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-  .screen { display: none; padding: 16px; padding-bottom: calc(var(--safe-bottom) + 16px); }
-  .screen.active { display: block; }
+/* ── Content ── */
+.content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.page { display: none; }
+.page.active { display: block; }
 
-  .card { background: var(--card); border-radius: 16px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 12px; }
-  .card-header { padding: 14px 16px 10px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
-  .card-header h2 { margin: 0; font-size: 13px; font-weight: 600; }
-  .card-body { padding: 14px 16px; }
+/* ── Back button row ── */
+.back-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 14px 18px 8px;
+}
+.back-btn {
+  display: flex; align-items: center; gap: 4px;
+  background: none; border: none; color: var(--accent);
+  font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer;
+  padding: 4px 0;
+}
+.back-btn svg { width: 18px; height: 18px; }
+.back-title { font-size: 14px; font-weight: 600; color: var(--muted); margin-left: auto; padding-right: 2px; }
 
-  .mode-toggle { display: flex; background: var(--paper); border-radius: 10px; padding: 3px; gap: 2px; margin-bottom: 16px; }
-  .mode-btn { flex: 1; padding: 8px; border: none; border-radius: 8px; font-size: 12px; font-family: inherit; font-weight: 500; cursor: pointer; transition: all 0.2s; background: transparent; color: var(--muted); }
-  .mode-btn.active { background: var(--card); color: var(--ink); box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+/* ── Cards ── */
+.card { background: var(--card); border-radius: 16px; border: 1px solid var(--border); overflow: hidden; margin: 0 16px 12px; }
+.card-hdr { padding: 13px 16px 10px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.card-hdr h2 { font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+.card-body { padding: 14px 16px; }
 
-  .field-group { margin-bottom: 12px; }
-  .field-label { display: block; font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 5px; }
-  .field-input { width: 100%; padding: 11px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 16px; font-family: inherit; background: var(--paper); color: var(--ink); -webkit-appearance: none; appearance: none; transition: border-color 0.2s; }
-  .field-input:focus { outline: none; border-color: var(--accent); background: white; }
-  .field-input.mono { font-family: 'DM Mono', monospace; font-size: 18px; font-weight: 500; }
-  .amount-wrap { position: relative; }
-  .amount-prefix { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); font-family: 'DM Mono', monospace; font-size: 16px; color: var(--muted); pointer-events: none; }
-  .amount-wrap .field-input { padding-left: 28px; }
+/* ── Year list ── */
+.year-section { padding: 16px 16px 0; }
+.section-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
 
-  .detail-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.year-card {
+  background: var(--card); border-radius: 18px; border: 1px solid var(--border);
+  margin-bottom: 12px; overflow: hidden; cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  -webkit-user-select: none;
+}
+.year-card:active { transform: scale(0.98); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.year-card-top {
+  padding: 16px 18px 12px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.year-num { font-size: 32px; font-weight: 900; font-family: 'DM Mono', monospace; line-height: 1; letter-spacing: -1px; }
+.year-badge {
+  font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 20px;
+  background: #e8f0fe; color: var(--accent); letter-spacing: 0.5px;
+}
+.year-badge.current { background: var(--ink); color: white; }
+.year-kpis { display: grid; grid-template-columns: 1fr 1fr 1fr; border-top: 1px solid var(--border); }
+.year-kpi { padding: 10px 14px; border-right: 1px solid var(--border); }
+.year-kpi:last-child { border-right: none; }
+.year-kpi .kl { font-size: 9px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--muted); }
+.year-kpi .kv { font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 500; margin-top: 2px; }
+.year-kpi .kv.g { color: var(--gross); }
+.year-kpi .kv.n { color: var(--net); }
+.year-kpi .kv.b { color: var(--bonus-gross); }
+.year-arrow { color: var(--muted); font-size: 18px; align-self: center; }
 
-  .summary-bar { background: var(--ink); color: white; border-radius: 12px; padding: 14px 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
-  .summary-item .s-label { font-size: 10px; opacity: 0.5; letter-spacing: 0.5px; }
-  .summary-item .s-val { font-family: 'DM Mono', monospace; font-size: 18px; font-weight: 500; margin-top: 2px; }
-  .summary-item .s-val.income { color: #86efac; }
-  .summary-item .s-val.deduct { color: #fca5a5; }
+.add-year-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: calc(100% - 32px); margin: 0 16px 16px;
+  padding: 14px; border: 2px dashed var(--border);
+  border-radius: 16px; background: none; color: var(--muted);
+  font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.add-year-btn:active { border-color: var(--accent); color: var(--accent); }
 
-  .btn-primary { width: 100%; padding: 15px; border: none; border-radius: 12px; background: var(--accent); color: white; font-size: 16px; font-weight: 600; font-family: inherit; cursor: pointer; transition: transform 0.1s, opacity 0.2s; -webkit-appearance: none; }
-  .btn-primary:active { transform: scale(0.98); opacity: 0.9; }
-  .btn-primary:disabled { opacity: 0.5; }
-  .btn-danger { padding: 8px 14px; border: 1.5px solid var(--danger); border-radius: 8px; background: none; color: var(--danger); font-size: 13px; font-family: inherit; cursor: pointer; font-weight: 500; }
-  .btn-secondary { padding: 10px 16px; border: 1.5px solid var(--border); border-radius: 10px; background: none; color: var(--ink); font-size: 14px; font-family: inherit; cursor: pointer; font-weight: 500; }
+/* ── Month list ── */
+.month-grid { padding: 8px 16px 16px; }
+.month-row {
+  background: var(--card); border-radius: 14px; border: 1px solid var(--border);
+  margin-bottom: 8px; padding: 13px 16px;
+  display: flex; align-items: center; gap: 12px;
+  cursor: pointer; transition: transform 0.12s;
+}
+.month-row:active { transform: scale(0.98); }
+.month-num { font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 700; width: 36px; flex-shrink: 0; line-height: 1; }
+.month-divider { width: 1px; height: 40px; background: var(--border); flex-shrink: 0; }
+.month-data { flex: 1; min-width: 0; }
+.month-row-amounts { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 8px; }
+.amt-item .al { font-size: 9px; font-weight: 700; color: var(--muted); letter-spacing: 0.3px; }
+.amt-item .av { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; }
+.amt-item .av.g { color: var(--gross); }
+.amt-item .av.n { color: var(--net); }
+.amt-item .av.bg { color: var(--bonus-gross); }
+.amt-item .av.bn { color: var(--bonus-net); }
+.amt-item .av.empty { color: var(--border); }
+.month-arrow { color: var(--muted); font-size: 16px; flex-shrink: 0; }
+.month-empty { text-align: center; padding: 6px 0 4px; color: var(--muted); font-size: 12px; }
 
-  .history-item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--border); }
-  .history-item:last-child { border-bottom: none; }
-  .hi-month .m { font-size: 22px; font-weight: 700; font-family: 'DM Mono', monospace; line-height: 1; text-align:center; }
-  .hi-month .y { font-size: 10px; color: var(--muted); text-align:center; }
-  .hi-divider { width: 1px; height: 36px; background: var(--border); flex-shrink: 0; }
-  .hi-details { flex: 1; min-width: 0; }
-  .hi-gross { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 500; }
-  .hi-net { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--muted); }
-  .hi-memo { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .hi-delete { padding: 8px; color: var(--muted); background: none; border: none; cursor: pointer; flex-shrink: 0; }
+.month-row.no-data { opacity: 0.5; }
 
-  .config-field-row { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-bottom: 1px solid var(--border); }
-  .config-field-row:last-child { border-bottom: none; }
-  .category-badge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 20px; white-space: nowrap; }
-  .badge-income { background: var(--income-bg); color: var(--income); }
-  .badge-deduction { background: var(--deduct-bg); color: var(--deduct); }
+/* Year total bar */
+.year-total-bar {
+  background: var(--ink); color: white;
+  margin: 0 16px 12px; border-radius: 14px;
+  padding: 14px 16px;
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;
+}
+.ytb-item .yl { font-size: 9px; opacity: 0.5; letter-spacing: 0.5px; text-transform: uppercase; }
+.ytb-item .yv { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 500; margin-top: 2px; }
+.ytb-item .yv.g { color: #93c5fd; }
+.ytb-item .yv.n { color: #6ee7b7; }
+.ytb-item .yv.b { color: #fcd34d; }
 
-  #toast { position: fixed; bottom: calc(var(--safe-bottom) + 80px); left: 50%; transform: translateX(-50%) translateY(20px); background: var(--ink); color: white; padding: 10px 20px; border-radius: 100px; font-size: 13px; font-weight: 500; opacity: 0; transition: all 0.3s; pointer-events: none; z-index: 100; white-space: nowrap; }
-  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+/* ── Input page ── */
+.input-page { padding: 8px 16px calc(var(--safe-bot) + 16px); }
+.month-label-big {
+  text-align: center; padding: 8px 0 16px;
+}
+.month-label-big .ml-m { font-size: 48px; font-weight: 900; font-family: 'DM Mono', monospace; line-height: 1; }
+.month-label-big .ml-y { font-size: 14px; color: var(--muted); margin-top: 2px; }
 
-  .spinner { width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .empty-state { text-align: center; padding: 40px 24px; color: var(--muted); }
-  .empty-state .icon { font-size: 40px; margin-bottom: 10px; }
-  .empty-state p { font-size: 14px; }
+.inp-section { margin-bottom: 12px; }
+.inp-section-title {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase;
+  color: var(--muted); padding: 0 4px 6px;
+}
+.inp-card { background: var(--card); border-radius: 14px; border: 1px solid var(--border); overflow: hidden; }
+.inp-row { display: flex; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.inp-row:last-child { border-bottom: none; }
+.inp-lbl { font-size: 13px; font-weight: 500; flex: 1; }
+.inp-lbl .sublbl { font-size: 10px; color: var(--muted); display: block; margin-top: 1px; }
+.inp-wrap { position: relative; width: 160px; flex-shrink: 0; }
+.inp-yen { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); font-family: 'DM Mono', monospace; font-size: 14px; color: var(--muted); pointer-events: none; }
+.inp-field {
+  width: 160px; padding: 9px 10px 9px 24px;
+  border: 1.5px solid var(--border); border-radius: 10px;
+  font-size: 15px; font-family: 'DM Mono', monospace; font-weight: 500;
+  background: var(--paper); color: var(--ink); text-align: right;
+  -webkit-appearance: none; appearance: none; transition: border-color 0.2s;
+}
+.inp-field:focus { outline: none; border-color: var(--accent); background: white; }
+.inp-memo { width: 100%; padding: 11px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 15px; font-family: inherit; background: var(--paper); color: var(--ink); -webkit-appearance: none; transition: border-color 0.2s; }
+.inp-memo:focus { outline: none; border-color: var(--accent); background: white; }
 
-  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: flex-end; z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
-  .modal-overlay.open { opacity: 1; pointer-events: all; }
-  .modal-sheet { width: 100%; background: var(--card); border-radius: 20px 20px 0 0; padding: 20px; padding-bottom: calc(var(--safe-bottom) + 20px); transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4,0,0.2,1); }
-  .modal-overlay.open .modal-sheet { transform: translateY(0); }
-  .modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; }
+.calc-bar {
+  background: var(--ink); color: white; border-radius: 12px; padding: 12px 16px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 12px;
+}
+.cb-item .cl { font-size: 9px; opacity: 0.5; letter-spacing: 0.5px; }
+.cb-item .cv { font-family: 'DM Mono', monospace; font-size: 17px; font-weight: 500; margin-top: 1px; }
+.cb-item .cv.g { color: #93c5fd; }
+.cb-item .cv.n { color: #6ee7b7; }
+.cb-item .cv.b { color: #fcd34d; }
 
-  .url-banner { background: #fef3c7; border: 1px solid #f59e0b; border-radius: 10px; padding: 12px 14px; margin-bottom: 14px; font-size: 13px; display: flex; gap: 8px; }
-  .url-banner a { color: var(--accent); font-weight: 600; }
+.btn-save {
+  width: 100%; padding: 15px; border: none; border-radius: 13px;
+  background: var(--accent); color: white; font-size: 16px; font-weight: 700;
+  font-family: inherit; cursor: pointer; letter-spacing: 0.3px;
+  transition: transform 0.1s, opacity 0.15s;
+}
+.btn-save:active { transform: scale(0.98); opacity: 0.85; }
+.btn-save:disabled { opacity: 0.45; }
+.btn-delete {
+  width: 100%; padding: 12px; border: 1.5px solid var(--danger); border-radius: 13px;
+  background: none; color: var(--danger); font-size: 14px; font-weight: 600;
+  font-family: inherit; cursor: pointer; margin-top: 8px;
+}
 
-  /* ── GRAPH ── */
-  .graph-year-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-  .yr-btn { width: 38px; height: 38px; border-radius: 50%; border: 1.5px solid var(--border); background: var(--card); cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; color: var(--ink); }
-  .yr-btn:disabled { opacity: 0.25; cursor: default; }
-  .yr-label { font-size: 20px; font-weight: 700; font-family: 'DM Mono', monospace; }
+/* ── Graph page ── */
+.graph-page { padding: 14px 16px calc(var(--safe-bot) + 16px); }
+.graph-year-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.yr-btn { width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid var(--border); background: var(--card); cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; color: var(--ink); }
+.yr-btn:disabled { opacity: 0.25; cursor: default; }
+.yr-lbl { font-size: 20px; font-weight: 900; font-family: 'DM Mono', monospace; }
 
-  .sub-tabs { display: flex; background: var(--paper); border-radius: 10px; padding: 3px; gap: 2px; margin-bottom: 14px; }
-  .sub-tab { flex: 1; padding: 7px; border: none; border-radius: 7px; font-size: 12px; font-family: inherit; font-weight: 600; cursor: pointer; transition: all 0.2s; background: transparent; color: var(--muted); }
-  .sub-tab.active { background: var(--card); color: var(--ink); box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+.sub-tabs { display: flex; background: var(--paper); border-radius: 10px; padding: 3px; gap: 2px; margin-bottom: 12px; }
+.sub-tab { flex: 1; padding: 7px; border: none; border-radius: 7px; font-size: 12px; font-family: inherit; font-weight: 600; cursor: pointer; transition: all 0.2s; background: transparent; color: var(--muted); }
+.sub-tab.active { background: var(--card); color: var(--ink); box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
 
-  .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-  .kpi-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 13px; }
-  .kpi-card .kl { font-size: 10px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: var(--muted); }
-  .kpi-card .kv { font-family: 'DM Mono', monospace; font-size: 17px; font-weight: 500; margin-top: 3px; line-height: 1.1; }
-  .kpi-card .ks { font-size: 11px; color: var(--muted); margin-top: 3px; }
-  .kpi-card.g { border-left: 3px solid var(--gross-color); }
-  .kpi-card.n { border-left: 3px solid var(--net-color); }
-  .kpi-card.d { border-left: 3px solid #f59e0b; }
-  .kpi-card.a { border-left: 3px solid #8b5cf6; }
+.kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.kpi-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 13px; }
+.kpi-card .kl { font-size: 10px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: var(--muted); }
+.kpi-card .kv { font-family: 'DM Mono', monospace; font-size: 17px; font-weight: 500; margin-top: 3px; line-height: 1.1; }
+.kpi-card .ks { font-size: 11px; color: var(--muted); margin-top: 3px; }
+.kpi-card.kg { border-left: 3px solid var(--gross); }
+.kpi-card.kn { border-left: 3px solid var(--net); }
+.kpi-card.kb { border-left: 3px solid var(--bonus-gross); }
+.kpi-card.ka { border-left: 3px solid #8b5cf6; }
 
-  .chart-legend { display: flex; gap: 16px; justify-content: center; padding: 8px 0 6px; }
-  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; }
-  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.chart-legend { display: flex; gap: 14px; justify-content: center; padding: 8px 0 6px; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 600; }
+.legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.chart-wrap { position: relative; }
+.chart-tip { position: absolute; background: var(--ink); color: white; border-radius: 10px; padding: 8px 12px; font-size: 11px; line-height: 1.6; pointer-events: none; opacity: 0; transition: opacity 0.15s; white-space: nowrap; z-index: 10; }
+.chart-tip.vis { opacity: 1; }
 
-  .chart-wrap { position: relative; }
-  .chart-tip { position: absolute; background: var(--ink); color: white; border-radius: 10px; padding: 8px 12px; font-size: 12px; pointer-events: none; opacity: 0; transition: opacity 0.15s; white-space: nowrap; z-index: 10; line-height: 1.6; }
-  .chart-tip.vis { opacity: 1; }
+.cmp-row { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+.cmp-row:last-child { border-bottom: none; }
+.cmp-yr { font-family: 'DM Mono', monospace; font-size: 15px; font-weight: 700; width: 44px; flex-shrink: 0; }
+.cmp-bars { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.bar-row { display: flex; align-items: center; gap: 6px; }
+.bar-bg { flex: 1; height: 7px; background: var(--paper); border-radius: 4px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 4px; transition: width 0.7s cubic-bezier(0.4,0,0.2,1); min-width: 2px; }
+.bar-amt { font-family: 'DM Mono', monospace; font-size: 11px; width: 64px; text-align: right; flex-shrink: 0; }
+.cmp-right { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex-shrink: 0; }
+.delta { font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 20px; }
+.delta.up   { background: #dcfce7; color: #166534; }
+.delta.down { background: #fee2e2; color: #9f1239; }
+.delta.flat { background: var(--paper); color: var(--muted); }
+.cmp-mo { font-size: 10px; color: var(--muted); }
 
-  /* year compare */
-  .cmp-row { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--border); }
-  .cmp-row:last-child { border-bottom: none; }
-  .cmp-yr { font-family: 'DM Mono', monospace; font-size: 15px; font-weight: 700; width: 44px; flex-shrink: 0; }
-  .cmp-bars { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-  .bar-row { display: flex; align-items: center; gap: 6px; }
-  .bar-bg { flex: 1; height: 8px; background: var(--paper); border-radius: 4px; overflow: hidden; }
-  .bar-fill { height: 100%; border-radius: 4px; transition: width 0.7s cubic-bezier(0.4,0,0.2,1); min-width: 2px; }
-  .bar-amt { font-family: 'DM Mono', monospace; font-size: 11px; width: 68px; text-align: right; flex-shrink: 0; }
-  .cmp-right { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex-shrink: 0; }
-  .delta { font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 20px; }
-  .delta.up   { background: #dcfce7; color: #166534; }
-  .delta.down { background: #fee2e2; color: #9f1239; }
-  .delta.flat { background: var(--paper); color: var(--muted); }
-  .cmp-mo { font-size: 10px; color: var(--muted); }
+/* ── Config page ── */
+.config-page { padding: 14px 0 calc(var(--safe-bot) + 16px); }
+.cfg-row { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-bottom: 1px solid var(--border); }
+.cfg-row:last-child { border-bottom: none; }
+.cat-badge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 20px; white-space: nowrap; }
+.cat-income { background: #f0fdf4; color: #166534; }
+.cat-deduction { background: #fff1f2; color: #9f1239; }
+.btn-primary { width: calc(100% - 32px); margin: 0 16px; padding: 14px; border: none; border-radius: 12px; background: var(--accent); color: white; font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer; }
+.btn-secondary { padding: 9px 14px; border: 1.5px solid var(--border); border-radius: 9px; background: none; color: var(--ink); font-size: 13px; font-family: inherit; cursor: pointer; font-weight: 500; }
+.btn-danger2 { padding: 5px 10px; border: 1.5px solid var(--danger); border-radius: 8px; background: none; color: var(--danger); font-size: 12px; font-family: inherit; cursor: pointer; font-weight: 500; }
+.field-input { width: 100%; padding: 11px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 15px; font-family: inherit; background: var(--paper); color: var(--ink); -webkit-appearance: none; }
+.field-input:focus { outline: none; border-color: var(--accent); background: white; }
+.field-label { display: block; font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 5px; }
+.field-group { margin-bottom: 12px; }
 
-  select.field-input { background-image: none; }
+/* ── Modal ── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: flex-end; z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal-sheet { width: 100%; background: var(--card); border-radius: 20px 20px 0 0; padding: 20px; padding-bottom: calc(var(--safe-bot) + 20px); transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4,0,0.2,1); }
+.modal-overlay.open .modal-sheet { transform: translateY(0); }
+.modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 18px; }
 
-  /* kind buttons */
-  .kind-btn { flex:1; padding:9px 4px; border:1.5px solid var(--border); border-radius:10px; background:var(--paper); color:var(--muted); font-size:12px; font-weight:600; font-family:inherit; cursor:pointer; transition:all 0.2s; text-align:center; }
-  .kind-btn.active { border-color:var(--accent); background:#e8eefb; color:var(--accent); }
-  #kind-bonus.active { border-color:#d97706 !important; background:#fef3c7 !important; color:#d97706 !important; }
-  #kind-other.active { border-color:#7c3aed !important; background:#ede9fe !important; color:#7c3aed !important; }
-  .kind-tag { font-size:10px; font-weight:700; padding:2px 7px; border-radius:20px; flex-shrink:0; }
-  .kind-tag.salary { background:#e8eefb; color:var(--accent); }
-  .kind-tag.bonus  { background:#fef3c7; color:#d97706; }
-  .kind-tag.other  { background:#ede9fe; color:#7c3aed; }
+/* ── Confirm overlay ── */
+.confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: flex-end; z-index: 300; }
+.confirm-sheet { width: 100%; background: var(--card); border-radius: 20px 20px 0 0; padding: 24px 20px calc(var(--safe-bot) + 24px); }
+
+/* ── Toast ── */
+#toast { position: fixed; bottom: calc(var(--safe-bot) + 70px); left: 50%; transform: translateX(-50%) translateY(16px); background: var(--ink); color: white; padding: 10px 20px; border-radius: 100px; font-size: 13px; font-weight: 500; opacity: 0; transition: all 0.3s; pointer-events: none; z-index: 400; white-space: nowrap; }
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── Spinner / Empty ── */
+.spinner { width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.empty-state { text-align: center; padding: 40px 24px; color: var(--muted); }
+.empty-icon { font-size: 40px; margin-bottom: 10px; }
+.empty-state p { font-size: 14px; }
+
+/* ── URL banner ── */
+.url-banner { background: #fef3c7; border: 1px solid #f59e0b; border-radius: 12px; padding: 12px 14px; margin: 0 16px 12px; font-size: 13px; display: flex; gap: 8px; }
+.url-banner a { color: var(--accent); font-weight: 600; }
+
+select.field-input { background-image: none; }
+
+/* ── 詳細入力パネル ── */
+.detail-toggle {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  width: 100%; padding: 12px; margin-bottom: 12px;
+  border: 1.5px dashed var(--border); border-radius: 12px;
+  background: none; color: var(--muted); font-size: 13px; font-weight: 600;
+  font-family: inherit; cursor: pointer; transition: all 0.2s;
+}
+.detail-toggle.open { border-color: var(--accent); color: var(--accent); background: #eef2ff; }
+.detail-toggle .arrow { transition: transform 0.25s; }
+.detail-toggle.open .arrow { transform: rotate(180deg); }
+
+.detail-panel {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.25s;
+  opacity: 0;
+}
+.detail-panel.open { max-height: 2000px; opacity: 1; }
+
+.detail-section-lbl {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase;
+  padding: 8px 4px 5px; display: flex; align-items: center; gap: 6px;
+}
+.detail-section-lbl.inc { color: #166534; }
+.detail-section-lbl.ded { color: #9f1239; }
+.detail-section-lbl::after { content:''; flex:1; height:1px; background:currentColor; opacity:0.2; }
+
+.detail-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+.detail-row-lbl { font-size: 13px; font-weight: 500; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.detail-calc-bar {
+  background: #1e293b; color: white; border-radius: 11px; padding: 11px 14px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 12px;
+}
+.dcb-item .dl { font-size: 9px; opacity: 0.5; letter-spacing: 0.4px; }
+.dcb-item .dv { font-family: 'DM Mono', monospace; font-size: 15px; font-weight: 500; margin-top: 1px; }
+.dcb-item .dv.g { color: #93c5fd; }
+.dcb-item .dv.n { color: #6ee7b7; }
 </style>
 </head>
 <body>
-<script>
-const GAS_URL_INIT = 'YOUR_GAS_WEB_APP_URL_HERE';
-let GAS_URL = GAS_URL_INIT;
 
-let state = {
-  screen: 'input', inputMode: 'quick',
-  config: { fields: [] }, allSalaries: [],
-  year: new Date().getFullYear(), month: new Date().getMonth() + 1,
-  gross: '', net: '', memo: '', detailFields: {}, kind: 'salary',
-  graphYear: new Date().getFullYear(), graphTab: 'monthly',
+<script>
+// ── GAS URL ───────────────────────────────────────────────
+const GAS_INIT = 'YOUR_GAS_WEB_APP_URL_HERE';
+let GAS_URL = GAS_INIT;
+
+// ── State ─────────────────────────────────────────────────
+let S = {
+  tab: 'years',           // 'years' | 'graph' | 'config'
+  viewYear: null,         // 年次一覧で選択中の年
+  editKey: null,          // 編集中の {year, month}
+  allData: [],            // [{year,month,salaryGross,salaryNet,bonusGross,bonusNet,memo,id}]
+  loaded: false,
+  graphYear: new Date().getFullYear(),
+  graphTab: 'monthly',
+  config: { fields: [] }, detailFields: {}, detailOpen: false,
 };
 
-/* ── API ─────────────────────────────────────────────────── */
-async function api(method, params) {
-  if (GAS_URL === GAS_URL_INIT) return demoApi(method, params);
-  // GASはすべてGETで通信（CORS対策）
+// ── API (全GETで統一) ──────────────────────────────────────
+async function api(params) {
+  if (GAS_URL === GAS_INIT) return demoApi(params);
   const p = {};
   for (const k in params) {
-    if (typeof params[k] === 'object') p[k] = JSON.stringify(params[k]);
-    else p[k] = params[k];
+    p[k] = typeof params[k] === 'object' ? JSON.stringify(params[k]) : params[k];
   }
   const res = await fetch(GAS_URL + '?' + new URLSearchParams(p));
   return res.json();
 }
 
-/* ── Demo Data ───────────────────────────────────────────── */
-let demoSalaries = [
-  {id:'d2501',year:2025,month:1, gross:448000,net:338000,memo:''},
-  {id:'d2502',year:2025,month:2, gross:451000,net:340000,memo:''},
-  {id:'d2503',year:2025,month:3, gross:452000,net:341000,memo:'昇給'},
-  {id:'d2504',year:2025,month:4, gross:460000,net:347000,memo:''},
-  {id:'d2505',year:2025,month:5, gross:458000,net:345000,memo:''},
-  {id:'d2506s',year:2025,month:6, gross:462000,net:349000,memo:'',kind:'salary'},
-  {id:'d2506',year:2025,month:6, gross:810000,net:590000,memo:'賞与',kind:'bonus'},
-  {id:'d2507',year:2025,month:7, gross:461000,net:348000,memo:''},
-  {id:'d2508',year:2025,month:8, gross:460000,net:347000,memo:''},
-  {id:'d2509',year:2025,month:9, gross:462000,net:349000,memo:''},
-  {id:'d2510',year:2025,month:10,gross:461000,net:348000,memo:''},
-  {id:'d2511',year:2025,month:11,gross:463000,net:350000,memo:''},
-  {id:'d2512',year:2025,month:12,gross:820000,net:598000,memo:'賞与',kind:'bonus'},
-  {id:'d2401',year:2024,month:1, gross:430000,net:325000,memo:''},
-  {id:'d2402',year:2024,month:2, gross:432000,net:326000,memo:''},
-  {id:'d2403',year:2024,month:3, gross:431000,net:326000,memo:''},
-  {id:'d2404',year:2024,month:4, gross:435000,net:328000,memo:''},
-  {id:'d2405',year:2024,month:5, gross:433000,net:327000,memo:''},
-  {id:'d2406',year:2024,month:6, gross:780000,net:568000,memo:'賞与',kind:'bonus'},
-  {id:'d2407',year:2024,month:7, gross:436000,net:329000,memo:''},
-  {id:'d2408',year:2024,month:8, gross:435000,net:328000,memo:''},
-  {id:'d2409',year:2024,month:9, gross:437000,net:330000,memo:''},
-  {id:'d2410',year:2024,month:10,gross:436000,net:329000,memo:''},
-  {id:'d2411',year:2024,month:11,gross:438000,net:331000,memo:''},
-  {id:'d2412',year:2024,month:12,gross:790000,net:575000,memo:'賞与',kind:'bonus'},
-  {id:'d2301',year:2023,month:1, gross:415000,net:315000,memo:''},
-  {id:'d2302',year:2023,month:2, gross:416000,net:315000,memo:''},
-  {id:'d2303',year:2023,month:3, gross:415000,net:315000,memo:''},
-  {id:'d2304',year:2023,month:4, gross:418000,net:317000,memo:''},
-  {id:'d2305',year:2023,month:5, gross:417000,net:316000,memo:''},
-  {id:'d2306',year:2023,month:6, gross:750000,net:548000,memo:'賞与',kind:'bonus'},
-  {id:'d2307',year:2023,month:7, gross:419000,net:318000,memo:''},
-  {id:'d2308',year:2023,month:8, gross:418000,net:317000,memo:''},
-  {id:'d2309',year:2023,month:9, gross:420000,net:318000,memo:''},
-  {id:'d2310',year:2023,month:10,gross:419000,net:317000,memo:''},
-  {id:'d2311',year:2023,month:11,gross:421000,net:319000,memo:''},
-  {id:'d2312',year:2023,month:12,gross:760000,net:555000,memo:'賞与',kind:'bonus'},
+// ── デモデータ ─────────────────────────────────────────────
+let demoData = [
+  {id:'1',year:2025,month:1, salaryGross:448000,salaryNet:338000,bonusGross:0,bonusNet:0,memo:''},
+  {id:'2',year:2025,month:2, salaryGross:451000,salaryNet:340000,bonusGross:0,bonusNet:0,memo:''},
+  {id:'3',year:2025,month:3, salaryGross:452000,salaryNet:341000,bonusGross:0,bonusNet:0,memo:'昇給'},
+  {id:'4',year:2025,month:4, salaryGross:460000,salaryNet:347000,bonusGross:0,bonusNet:0,memo:''},
+  {id:'5',year:2025,month:5, salaryGross:458000,salaryNet:345000,bonusGross:0,bonusNet:0,memo:''},
+  {id:'6',year:2025,month:6, salaryGross:461000,salaryNet:348000,bonusGross:810000,bonusNet:610000,memo:'夏季賞与'},
+  {id:'7',year:2025,month:7, salaryGross:461000,salaryNet:348000,bonusGross:0,bonusNet:0,memo:''},
+  {id:'8',year:2025,month:8, salaryGross:460000,salaryNet:347000,bonusGross:0,bonusNet:0,memo:''},
+  {id:'9',year:2025,month:9, salaryGross:462000,salaryNet:349000,bonusGross:0,bonusNet:0,memo:''},
+  {id:'10',year:2025,month:10,salaryGross:461000,salaryNet:348000,bonusGross:0,bonusNet:0,memo:''},
+  {id:'11',year:2025,month:11,salaryGross:463000,salaryNet:350000,bonusGross:0,bonusNet:0,memo:''},
+  {id:'12',year:2025,month:12,salaryGross:463000,salaryNet:350000,bonusGross:820000,bonusNet:618000,memo:'冬季賞与'},
+  {id:'13',year:2024,month:1, salaryGross:430000,salaryNet:325000,bonusGross:0,bonusNet:0,memo:''},
+  {id:'14',year:2024,month:2, salaryGross:432000,salaryNet:326000,bonusGross:0,bonusNet:0,memo:''},
+  {id:'15',year:2024,month:3, salaryGross:431000,salaryNet:326000,bonusGross:0,bonusNet:0,memo:''},
+  {id:'16',year:2024,month:4, salaryGross:435000,salaryNet:328000,bonusGross:0,bonusNet:0,memo:''},
+  {id:'17',year:2024,month:5, salaryGross:433000,salaryNet:327000,bonusGross:0,bonusNet:0,memo:''},
+  {id:'18',year:2024,month:6, salaryGross:436000,salaryNet:329000,bonusGross:780000,bonusNet:588000,memo:'夏季賞与'},
+  {id:'19',year:2024,month:7, salaryGross:436000,salaryNet:329000,bonusGross:0,bonusNet:0,memo:''},
+  {id:'20',year:2024,month:8, salaryGross:435000,salaryNet:328000,bonusGross:0,bonusNet:0,memo:''},
+  {id:'21',year:2024,month:9, salaryGross:437000,salaryNet:330000,bonusGross:0,bonusNet:0,memo:''},
+  {id:'22',year:2024,month:10,salaryGross:436000,salaryNet:329000,bonusGross:0,bonusNet:0,memo:''},
+  {id:'23',year:2024,month:11,salaryGross:438000,salaryNet:331000,bonusGross:0,bonusNet:0,memo:''},
+  {id:'24',year:2024,month:12,salaryGross:438000,salaryNet:331000,bonusGross:790000,bonusNet:595000,memo:'冬季賞与'},
+  {id:'25',year:2023,month:1, salaryGross:415000,salaryNet:315000,bonusGross:0,bonusNet:0,memo:''},
+  {id:'26',year:2023,month:6, salaryGross:418000,salaryNet:317000,bonusGross:750000,bonusNet:565000,memo:'夏季賞与'},
+  {id:'27',year:2023,month:12,salaryGross:421000,salaryNet:319000,bonusGross:760000,bonusNet:572000,memo:'冬季賞与'},
 ];
-function demoApi(method, params) {
-  if (params.action==='getConfig') return Promise.resolve({fields:[
-    {key:'base',label:'基本給',category:'income'},{key:'position',label:'役付手当',category:'income'},
-    {key:'overtime',label:'残業代',category:'income'},{key:'transport',label:'通勤手当',category:'income'},
-    {key:'health_ins',label:'健康保険',category:'deduction'},{key:'pension',label:'厚生年金',category:'deduction'},
-    {key:'employment_ins',label:'雇用保険',category:'deduction'},{key:'income_tax',label:'所得税',category:'deduction'},
-    {key:'resident_tax',label:'住民税',category:'deduction'},
-  ]});
-  if (params.action==='getSalaries') return Promise.resolve({salaries:[...demoSalaries].reverse()});
-  if (params.action==='addSalary') { const id=Date.now().toString(); demoSalaries.push({id,...params.data}); return Promise.resolve({success:true,id}); }
-  if (params.action==='deleteSalary') { demoSalaries=demoSalaries.filter(s=>s.id!==params.id); return Promise.resolve({success:true}); }
-  if (params.action==='saveConfig') return Promise.resolve({success:true});
+function demoApi(p) {
+  if (p.action==='load') return Promise.resolve({data: demoData});
+  if (p.action==='save') {
+    const d = JSON.parse(p.record);
+    const idx = demoData.findIndex(x=>x.year===d.year&&x.month===d.month);
+    if (idx>=0) demoData[idx]={...demoData[idx],...d};
+    else demoData.push({id:Date.now().toString(),...d});
+    return Promise.resolve({success:true});
+  }
+  if (p.action==='deleteYear') {
+    const y=+p.year; demoData=demoData.filter(x=>x.year!==y);
+    return Promise.resolve({success:true});
+  }
+  if (p.action==='getConfig') return Promise.resolve({fields:[]});
+  if (p.action==='saveConfig') return Promise.resolve({success:true});
 }
 </script>
 
-<!-- ════ APP ════ -->
+<!-- ═══════════════════════════════════════
+     APP
+═══════════════════════════════════════ -->
 <div id="app">
-  <div class="app-header">
-    <h1>給与帳 <span style="font-size:14px;opacity:0.4;font-weight:400">Kyuyo-cho</span></h1>
-    <div class="subtitle">Salary Manager</div>
+
+  <!-- Header -->
+  <div class="hdr" id="main-hdr">
+    <div class="hdr-left">
+      <h1>給与帳</h1>
+      <div class="sub">Salary Manager</div>
+    </div>
+    <div class="hdr-right" id="hdr-actions"></div>
   </div>
 
+  <!-- Tab bar -->
   <div class="tab-bar">
-    <button class="tab-btn active" onclick="navigate('input')" id="tab-input">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 4v16m8-8H4"/></svg>入力
+    <button class="tab-btn active" id="tab-years" onclick="switchTab('years')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      一覧
     </button>
-    <button class="tab-btn" onclick="navigate('history')" id="tab-history">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>履歴
+    <button class="tab-btn" id="tab-graph" onclick="switchTab('graph')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      グラフ
     </button>
-    <button class="tab-btn" onclick="navigate('graph')" id="tab-graph">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>グラフ
-    </button>
-    <button class="tab-btn" onclick="navigate('config')" id="tab-config">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>設定
+    <button class="tab-btn" id="tab-config" onclick="switchTab('config')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      設定
     </button>
   </div>
 
-  <div class="content-area">
-
-    <!-- ══ 入力 ══ -->
-    <div class="screen active" id="screen-input">
-      <div id="url-warn" class="url-banner" style="display:none">⚠️ <span>デモモード中。<a href="#" onclick="navigate('config')">設定</a>でGAS URLを設定してください。</span></div>
-      <div class="card"><div class="card-body">
-        <div style="display:flex;gap:10px;margin-bottom:12px">
-          <div class="field-group" style="flex:1;margin-bottom:0"><label class="field-label">年</label><select class="field-input" id="sel-year" onchange="state.year=this.value"></select></div>
-          <div class="field-group" style="flex:1;margin-bottom:0"><label class="field-label">月</label><select class="field-input" id="sel-month" onchange="state.month=this.value"></select></div>
-        </div>
-        <div class="field-group" style="margin-bottom:0">
-          <label class="field-label">種別</label>
-          <div style="display:flex;gap:6px">
-            <button class="kind-btn active" id="kind-salary" onclick="setKind('salary')">💴 給与</button>
-            <button class="kind-btn" id="kind-bonus" onclick="setKind('bonus')">🎁 賞与</button>
-            <button class="kind-btn" id="kind-other" onclick="setKind('other')">📄 その他</button>
-          </div>
-        </div>
-      </div></div>
-      <div class="mode-toggle">
-        <button class="mode-btn active" id="mode-quick" onclick="setMode('quick')">⚡ クイック</button>
-        <button class="mode-btn" id="mode-detail" onclick="setMode('detail')">📋 詳細入力</button>
-      </div>
-      <div id="form-quick">
-        <div class="card"><div class="card-header"><span>💰</span><h2>支給額</h2></div><div class="card-body">
-          <div class="field-group"><label class="field-label">額面（税引前）</label><div class="amount-wrap"><span class="amount-prefix">¥</span><input type="number" inputmode="numeric" class="field-input mono" id="q-gross" placeholder="450,000" oninput="state.gross=this.value;updateQS()"></div></div>
-          <div class="field-group"><label class="field-label">手取り（税引後）</label><div class="amount-wrap"><span class="amount-prefix">¥</span><input type="number" inputmode="numeric" class="field-input mono" id="q-net" placeholder="340,000" oninput="state.net=this.value;updateQS()"></div></div>
-          <div class="field-group"><label class="field-label">メモ</label><input type="text" class="field-input" id="q-memo" placeholder="例: 賞与あり" oninput="state.memo=this.value" maxlength="50"></div>
-        </div></div>
-        <div class="summary-bar" id="quick-summary" style="display:none">
-          <div class="summary-item"><div class="s-label">額面</div><div class="s-val income" id="qs-g">¥0</div></div>
-          <div class="summary-item"><div class="s-label">手取り</div><div class="s-val deduct" id="qs-n">¥0</div></div>
-          <div class="summary-item" style="grid-column:1/-1"><div class="s-label">控除額（推計）</div><div class="s-val" id="qs-d">¥0</div></div>
-        </div>
-      </div>
-      <div id="form-detail" style="display:none">
-        <div class="card"><div class="card-header"><span>📥</span><h2>支給項目</h2></div><div class="card-body" id="detail-income"></div></div>
-        <div class="card"><div class="card-header"><span>📤</span><h2>控除項目</h2></div><div class="card-body" id="detail-deduct"></div></div>
-        <div class="summary-bar">
-          <div class="summary-item"><div class="s-label">支給合計</div><div class="s-val income" id="ds-i">¥0</div></div>
-          <div class="summary-item"><div class="s-label">控除合計</div><div class="s-val deduct" id="ds-d">¥0</div></div>
-          <div class="summary-item"><div class="s-label">額面</div><div class="s-val" id="ds-g">¥0</div></div>
-          <div class="summary-item"><div class="s-label">手取り</div><div class="s-val" id="ds-n">¥0</div></div>
-        </div>
-        <div class="card"><div class="card-body"><div class="field-group"><label class="field-label">メモ</label><input type="text" class="field-input" id="d-memo" placeholder="例: 残業多め" oninput="state.memo=this.value" maxlength="50"></div></div></div>
-      </div>
-      <button class="btn-primary" onclick="submitSalary()" id="submit-btn">保存する</button>
-    </div>
-
-    <!-- ══ 履歴 ══ -->
-    <div class="screen" id="screen-history">
-      <div class="card"><div id="history-list"><div class="empty-state"><div class="spinner" style="margin:0 auto 12px"></div><p>読み込み中...</p></div></div></div>
-    </div>
-
-    <!-- ══ グラフ ══ -->
-    <div class="screen" id="screen-graph">
-      <!-- 年ナビ -->
-      <div class="graph-year-nav">
-        <button class="yr-btn" id="btn-prev-yr" onclick="shiftGraphYear(-1)">‹</button>
-        <span class="yr-label" id="graph-yr-lbl">2025年</span>
-        <button class="yr-btn" id="btn-next-yr" onclick="shiftGraphYear(+1)">›</button>
-      </div>
-      <!-- サブタブ -->
-      <div class="sub-tabs">
-        <button class="sub-tab active" id="st-monthly" onclick="setGraphTab('monthly')">📅 月次推移</button>
-        <button class="sub-tab" id="st-compare" onclick="setGraphTab('compare')">🏆 年収比較</button>
-      </div>
-
-      <!-- 月次推移 -->
-      <div id="gv-monthly">
-        <div class="kpi-grid" id="kpi-grid"></div>
-        <div class="card">
-          <div class="card-header"><span>📊</span><h2>月次グラフ（タップで詳細）</h2></div>
-          <div class="card-body" style="padding:10px 8px">
-            <div class="chart-legend">
-              <div class="legend-item"><div class="legend-dot" style="background:var(--gross-color)"></div>額面</div>
-              <div class="legend-item"><div class="legend-dot" style="background:var(--net-color)"></div>手取り</div>
-            </div>
-            <div class="chart-wrap"><canvas id="c-monthly"></canvas><div class="chart-tip" id="tip-monthly"></div></div>
-          </div>
-        </div>
-        <div class="card"><div class="card-header"><span>🗓</span><h2>月別一覧</h2></div><div id="monthly-list"></div></div>
-      </div>
-
-      <!-- 年収比較 -->
-      <div id="gv-compare" style="display:none">
-        <div class="card"><div class="card-header"><span>🏆</span><h2>年別・年収比較</h2></div><div id="year-cmp-list"></div></div>
-        <div class="card">
-          <div class="card-header"><span>📈</span><h2>年収推移グラフ</h2></div>
-          <div class="card-body" style="padding:10px 8px">
-            <div class="chart-legend">
-              <div class="legend-item"><div class="legend-dot" style="background:var(--gross-color)"></div>年収（額面）</div>
-              <div class="legend-item"><div class="legend-dot" style="background:var(--net-color)"></div>年収（手取り）</div>
-            </div>
-            <div class="chart-wrap"><canvas id="c-yearly"></canvas></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══ 設定 ══ -->
-    <div class="screen" id="screen-config">
-      <div class="card"><div class="card-header"><span>🔗</span><h2>GAS Web App URL</h2></div><div class="card-body">
-        <div class="field-group"><label class="field-label">デプロイURL</label><input type="url" class="field-input" id="gas-url-input" placeholder="https://script.google.com/macros/s/..." style="font-size:13px"></div>
-        <button class="btn-primary" onclick="saveGasUrl()" style="margin-top:4px">URLを保存</button>
-      </div></div>
-      <div class="card">
-        <div class="card-header" style="justify-content:space-between">
-          <div style="display:flex;align-items:center;gap:8px"><span>📝</span><h2>給与項目</h2></div>
-          <button class="btn-secondary" style="font-size:12px;padding:6px 12px" onclick="openAddModal()">+ 追加</button>
-        </div>
-        <div id="config-fields-list"></div>
-        <div class="card-body" style="padding-top:0"><button class="btn-primary" onclick="saveConfig()">項目設定を保存</button></div>
-      </div>
-    </div>
-
+  <!-- Content area -->
+  <div class="content" id="content">
+    <!-- 動的にレンダリング -->
+    <div class="empty-state"><div class="spinner" style="margin:0 auto 12px"></div><p>読み込み中...</p></div>
   </div>
 </div>
 
-<!-- Modal -->
+<!-- Add Field Modal -->
 <div class="modal-overlay" id="add-modal" onclick="closeAddModal(event)">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
     <h3 style="margin:0 0 16px;font-size:16px;font-weight:700">項目を追加</h3>
     <div class="field-group"><label class="field-label">項目名</label><input type="text" class="field-input" id="new-field-label" placeholder="例: 家族手当" maxlength="20"></div>
-    <div class="field-group"><label class="field-label">カテゴリ</label><select class="field-input" id="new-field-category"><option value="income">支給（収入）</option><option value="deduction">控除（天引き）</option></select></div>
+    <div class="field-group"><label class="field-label">カテゴリ</label><select class="field-input" id="new-field-category"><option value="income">支給</option><option value="deduction">控除</option></select></div>
     <div style="display:flex;gap:10px;margin-top:16px">
       <button class="btn-secondary" style="flex:1" onclick="closeAddModal()">キャンセル</button>
-      <button class="btn-primary" style="flex:2" onclick="addField()">追加</button>
+      <button class="btn-primary" style="flex:2;margin:0;width:auto" onclick="addField()">追加</button>
     </div>
   </div>
 </div>
+
 <div id="toast"></div>
 
-<!-- ════ JS ════ -->
+<!-- ═══════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════ -->
 <script>
-/* Init */
+// ── Init ──────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
-  initYM(); loadGasUrl(); await loadConfig(); renderDetailFields();
+  const saved = localStorage.getItem('gas_url');
+  if (saved && saved !== GAS_INIT) GAS_URL = saved;
+  await loadAll();
+  renderYears();
 });
-function initYM() {
-  const sy=document.getElementById('sel-year'), sm=document.getElementById('sel-month'), now=new Date();
-  for(let y=now.getFullYear();y>=now.getFullYear()-5;y--){const o=new Option(y+'年',y);if(y===now.getFullYear())o.selected=true;sy.add(o);}
-  for(let m=1;m<=12;m++){const o=new Option(m+'月',m);if(m===now.getMonth()+1)o.selected=true;sm.add(o);}
-  state.year=now.getFullYear(); state.month=now.getMonth()+1;
-}
-function setKind(k) {
-  state.kind = k;
-  ['salary','bonus','other'].forEach(id => {
-    const b = document.getElementById('kind-'+id);
-    if(b) b.classList.toggle('active', id===k);
-  });
-}
-function loadGasUrl() {
-  const s=localStorage.getItem('gas_url');
-  if(s&&s!==GAS_URL_INIT){GAS_URL=s;document.getElementById('gas-url-input').value=s;}
-  else document.getElementById('url-warn').style.display='flex';
-}
-function saveGasUrl() {
-  const u=document.getElementById('gas-url-input').value.trim();
-  if(!u.startsWith('https://script.google.com')){toast('❌ 正しいGAS URLを入力してください');return;}
-  GAS_URL=u; localStorage.setItem('gas_url',u);
-  document.getElementById('url-warn').style.display='none'; toast('✅ URLを保存しました');
-}
 
-/* Nav */
-function navigate(sc) {
-  state.screen=sc;
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('screen-'+sc).classList.add('active');
-  document.getElementById('tab-'+sc).classList.add('active');
-  if(sc==='history') loadHistory();
-  if(sc==='graph') loadGraph();
-  if(sc==='config') renderConfigList();
-}
-
-/* Input */
-function setMode(m) {
-  state.inputMode=m;
-  ['quick','detail'].forEach(k=>document.getElementById('mode-'+k).classList.toggle('active',k===m));
-  document.getElementById('form-quick').style.display=m==='quick'?'block':'none';
-  document.getElementById('form-detail').style.display=m==='detail'?'block':'none';
-}
-function updateQS() {
-  const g=parseInt(state.gross)||0, n=parseInt(state.net)||0;
-  document.getElementById('quick-summary').style.display=(g||n)?'grid':'none';
-  document.getElementById('qs-g').textContent='¥'+g.toLocaleString();
-  document.getElementById('qs-n').textContent='¥'+n.toLocaleString();
-  document.getElementById('qs-d').textContent='¥'+(g-n).toLocaleString();
-}
-function renderDetailFields() {
-  const f=state.config.fields||[], inc=f.filter(x=>x.category==='income'), ded=f.filter(x=>x.category==='deduction');
-  const row=x=>`<div class="detail-row"><span style="font-size:13px;font-weight:500;flex:1">${x.label}</span>
-    <div class="amount-wrap" style="width:148px;flex-shrink:0"><span class="amount-prefix" style="font-size:14px">¥</span>
-    <input type="number" inputmode="numeric" class="field-input mono" style="width:148px;font-size:15px;padding:8px 8px 8px 24px;text-align:right"
-    placeholder="0" data-key="${x.key}" oninput="state.detailFields['${x.key}']=this.value;updateDS()"></div></div>`;
-  document.getElementById('detail-income').innerHTML=inc.length?inc.map(row).join(''):'<p style="color:var(--muted);font-size:13px;text-align:center;padding:6px">項目なし</p>';
-  document.getElementById('detail-deduct').innerHTML=ded.length?ded.map(row).join(''):'<p style="color:var(--muted);font-size:13px;text-align:center;padding:6px">項目なし</p>';
-}
-function updateDS() {
-  const f=state.config.fields||[];let inc=0,ded=0;
-  f.forEach(x=>{const v=parseInt(state.detailFields[x.key])||0;if(x.category==='income')inc+=v;else ded+=v;});
-  state.gross=inc; state.net=inc-ded;
-  document.getElementById('ds-i').textContent='¥'+inc.toLocaleString();
-  document.getElementById('ds-d').textContent='¥'+ded.toLocaleString();
-  document.getElementById('ds-g').textContent='¥'+inc.toLocaleString();
-  document.getElementById('ds-n').textContent='¥'+(inc-ded).toLocaleString();
-}
-
-/* Submit */
-async function submitSalary() {
-  const btn=document.getElementById('submit-btn');
-  if(state.inputMode==='quick'){state.gross=parseInt(document.getElementById('q-gross').value)||0;state.net=parseInt(document.getElementById('q-net').value)||0;state.memo=document.getElementById('q-memo').value;}
-  else{state.memo=document.getElementById('d-memo').value;}
-  if(!state.gross&&!state.net){toast('❌ 金額を入力してください');return;}
-  btn.disabled=true; btn.textContent='保存中...';
+async function loadAll() {
   try {
-    await api('GET',{action:'addSalary',data:{year:+state.year,month:+state.month,type:state.inputMode,kind:state.kind,fields:state.detailFields,gross:state.gross,net:state.net,memo:state.memo}});
-    toast('✅ 保存しました');
-    ['q-gross','q-net','q-memo','d-memo'].forEach(id=>document.getElementById(id).value='');
-    state.gross='';state.net='';state.memo='';state.detailFields={};
-    document.querySelectorAll('[data-key]').forEach(el=>el.value='');
-    updateQS(); updateDS(); document.getElementById('quick-summary').style.display='none';
-    state.allSalaries=[];
-  } catch(e){toast('❌ 保存に失敗しました');}
-  finally{btn.disabled=false;btn.textContent='保存する';}
+    const [r, cfg] = await Promise.all([
+      api({action:'load'}),
+      api({action:'getConfig'}),
+    ]);
+    S.allData  = r.data   || [];
+    S.config   = cfg      || { fields: [] };
+  } catch(e) { S.allData = []; }
+  S.loaded = true;
 }
 
-/* History */
-async function loadHistory() {
-  const el=document.getElementById('history-list');
-  el.innerHTML='<div class="empty-state"><div class="spinner" style="margin:0 auto 12px"></div><p>読み込み中...</p></div>';
-  try {
-    const res=await api('GET',{action:'getSalaries'}); const S=res.salaries||[];
-    if(!S.length){el.innerHTML='<div class="empty-state"><div class="icon">📭</div><p>まだデータがありません</p></div>';return;}
-    el.innerHTML=S.map(s=>`<div class="history-item">
-      <div class="hi-month"><div class="m">${String(s.month).padStart(2,'0')}</div><div class="y">${s.year}</div></div>
-      <div class="hi-divider"></div>
-      <div class="hi-details">
-        ${(()=>{const k=s.kind||"salary";const lbl={"salary":"💴 給与","bonus":"🎁 賞与","other":"📄 その他"};return "<div style=\"margin-bottom:3px\"><span class=\"kind-tag "+k+"\">"+lbl[k]+"</span></div>";})()}
-        <div class="hi-gross">¥${N(s.gross)}<span style="font-size:11px;color:var(--muted);margin-left:4px">額面</span></div>
-        <div class="hi-net">手取 ¥${N(s.net)}</div>
-        ${s.memo?`<div class="hi-memo">${eh(s.memo)}</div>`:''}
-      </div>
-      <button class="hi-delete" onclick="delSalary('${s.id}',this)">
-        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-      </button>
-    </div>`).join('');
-  } catch(e){el.innerHTML='<div class="empty-state"><p>⚠️ 読み込み失敗</p></div>';}
-}
-async function delSalary(id,btn) {
-  if(!confirm('削除しますか？'))return;
-  btn.closest('.history-item').style.opacity='0.4';
-  try{await api('GET',{action:'deleteSalary',id});btn.closest('.history-item').remove();toast('🗑 削除しました');state.allSalaries=[];}
-  catch(e){toast('❌ 削除に失敗しました');btn.closest('.history-item').style.opacity='1';}
+// ── Tab switching ──────────────────────────────────────────
+function switchTab(tab) {
+  S.tab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  if (tab === 'years') renderYears();
+  else if (tab === 'graph') { S.graphYear = getYears().includes(S.graphYear) ? S.graphYear : (getYears().slice(-1)[0]||new Date().getFullYear()); renderGraph(); }
+  else if (tab === 'config') renderConfig();
 }
 
-/* Config */
-async function loadConfig(){try{const r=await api('GET',{action:'getConfig'});state.config=r;}catch(e){state.config={fields:[]};}}
-function renderConfigList(){
-  const el=document.getElementById('config-fields-list'),f=state.config.fields||[];
-  if(!f.length){el.innerHTML='<div class="empty-state" style="padding:20px"><p>項目がありません</p></div>';return;}
-  el.innerHTML=f.map((x,i)=>`<div class="config-field-row">
-    <span style="color:var(--muted);padding:4px;cursor:grab">☰</span>
-    <span style="flex:1;font-size:14px;font-weight:500">${eh(x.label)}</span>
-    <span class="category-badge badge-${x.category}">${x.category==='income'?'支給':'控除'}</span>
-    <button class="btn-danger" style="padding:5px 10px;font-size:12px" onclick="removeField(${i})">削除</button>
-  </div>`).join('');
+// ════════════════════════════════════════
+//  年次一覧
+// ════════════════════════════════════════
+function getYears() {
+  return [...new Set(S.allData.map(d=>d.year))].sort((a,b)=>b-a);
 }
-function removeField(i){state.config.fields.splice(i,1);renderConfigList();renderDetailFields();}
-async function saveConfig(){try{await api('GET',{action:'saveConfig',config:state.config});toast('✅ 保存しました');renderDetailFields();}catch(e){toast('❌ 失敗');}}
-
-/* Modal */
-function openAddModal(){document.getElementById('new-field-label').value='';document.getElementById('new-field-category').value='income';document.getElementById('add-modal').classList.add('open');setTimeout(()=>document.getElementById('new-field-label').focus(),300);}
-function closeAddModal(e){if(!e||e.target===document.getElementById('add-modal'))document.getElementById('add-modal').classList.remove('open');}
-function addField(){
-  const label=document.getElementById('new-field-label').value.trim(),cat=document.getElementById('new-field-category').value;
-  if(!label){toast('❌ 項目名を入力してください');return;}
-  if(!state.config.fields)state.config.fields=[];
-  state.config.fields.push({key:'c_'+Date.now(),label,category:cat});
-  renderConfigList();renderDetailFields();closeAddModal();toast('✅ 追加しました');
+function yearSummary(year) {
+  const rows = S.allData.filter(d=>d.year===year);
+  const salaryGross = rows.reduce((a,d)=>a+(+d.salaryGross||0),0);
+  const salaryNet   = rows.reduce((a,d)=>a+(+d.salaryNet||0),0);
+  const bonusGross  = rows.reduce((a,d)=>a+(+d.bonusGross||0),0);
+  const bonusNet    = rows.reduce((a,d)=>a+(+d.bonusNet||0),0);
+  const totalGross  = salaryGross + bonusGross;
+  const totalNet    = salaryNet + bonusNet;
+  return { salaryGross, salaryNet, bonusGross, bonusNet, totalGross, totalNet, months: rows.length };
 }
 
-/* ════════════════════════════════════════════════════
-   📊  GRAPH ENGINE  (Pure Canvas 2D)
-════════════════════════════════════════════════════ */
-async function loadGraph() {
-  if(!state.allSalaries.length) {
-    try{const r=await api('GET',{action:'getSalaries'});state.allSalaries=r.salaries||[];}catch(e){state.allSalaries=[];}
+function renderYears() {
+  S.viewYear = null;
+  S.editKey = null;
+  updateHdr('給与帳', [
+    `<button class="hdr-btn" onclick="showAddYear()" title="年を追加">＋</button>`
+  ]);
+  const years = getYears();
+  const curYear = new Date().getFullYear();
+  let html = '<div class="year-section">';
+  if (!years.length) {
+    html += `<div class="empty-state" style="padding:60px 24px">
+      <div class="empty-icon">📅</div>
+      <p>＋ボタンで年を追加してください</p>
+    </div>`;
+  } else {
+    html += `<div class="section-label">年次一覧</div>`;
+    html += years.map(y => {
+      const sm = yearSummary(y);
+      const isCur = y === curYear;
+      return `<div class="year-card" onclick="openYear(${y})">
+        <div class="year-card-top">
+          <div>
+            <div class="year-num">${y}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px">${sm.months}ヶ月分</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+            <span class="year-badge${isCur?' current':''}">${isCur?'今年':y+'年'}</span>
+            <button onclick="event.stopPropagation();confirmDeleteYear(${y})" style="background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;padding:2px 0">🗑 削除</button>
+          </div>
+        </div>
+        <div class="year-kpis">
+          <div class="year-kpi"><div class="kl">年収(額面)</div><div class="kv g">¥${fmtM(sm.totalGross)}</div></div>
+          <div class="year-kpi"><div class="kl">年収(手取)</div><div class="kv n">¥${fmtM(sm.totalNet)}</div></div>
+          <div class="year-kpi"><div class="kl">賞与合計</div><div class="kv b">¥${fmtM(sm.bonusGross)}</div></div>
+        </div>
+      </div>`;
+    }).join('');
   }
+  html += `</div>`;
+  // URLバナー
+  if (GAS_URL === GAS_INIT) {
+    html = `<div class="url-banner" style="margin-top:16px">⚠️ <span>デモモード中。<a href="#" onclick="switchTab('config')">設定</a>でGAS URLを設定してください。</span></div>` + html;
+  }
+  setContent(html);
+}
+
+function showAddYear() {
+  const html = `<div class="confirm-overlay" id="add-yr-overlay" onclick="if(event.target===this)this.remove()">
+    <div class="confirm-sheet">
+      <div class="modal-handle"></div>
+      <h3 style="font-size:16px;font-weight:700;margin-bottom:16px">年を追加</h3>
+      <div class="field-group">
+        <label class="field-label">追加する年</label>
+        <select class="field-input" id="new-year-sel"></select>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:16px">
+        <button class="btn-secondary" style="flex:1" onclick="document.getElementById('add-yr-overlay').remove()">キャンセル</button>
+        <button class="btn-primary" style="flex:2;margin:0;width:auto" onclick="doAddYear()">追加</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+  const sel = document.getElementById('new-year-sel');
+  const existing = getYears();
+  const cur = new Date().getFullYear();
+  for (let y = cur + 1; y >= cur - 10; y--) {
+    if (!existing.includes(y)) {
+      const o = new Option(y + '年', y);
+      if (y === cur) o.selected = true;
+      sel.add(o);
+    }
+  }
+}
+function doAddYear() {
+  const y = +document.getElementById('new-year-sel').value;
+  document.getElementById('add-yr-overlay').remove();
+  // 年を追加してその年の月次画面へ
+  openYear(y);
+}
+
+function confirmDeleteYear(year) {
+  if (!confirm(`${year}年のデータをすべて削除しますか？`)) return;
+  deleteYear(year);
+}
+async function deleteYear(year) {
+  try {
+    await api({action:'deleteYear', year});
+    S.allData = S.allData.filter(d => d.year !== year);
+    renderYears();
+    toast(`🗑 ${year}年を削除しました`);
+  } catch(e) { toast('❌ 削除に失敗しました'); }
+}
+
+// ════════════════════════════════════════
+//  月次一覧
+// ════════════════════════════════════════
+function openYear(year) {
+  S.viewYear = year;
+  updateHdr(`${year}年`, [
+    `<button class="hdr-btn" onclick="renderYears()">
+      <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    </button>`
+  ]);
+
+  const sm = yearSummary(year);
+  let html = `
+    <div class="back-row">
+      <button class="back-btn" onclick="renderYears()">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        年次一覧
+      </button>
+      <span class="back-title">${year}年</span>
+    </div>
+    <div class="year-total-bar">
+      <div class="ytb-item"><div class="yl">年収(額面)</div><div class="yv g">¥${fmtM(sm.totalGross)}</div></div>
+      <div class="ytb-item"><div class="yl">年収(手取)</div><div class="yv n">¥${fmtM(sm.totalNet)}</div></div>
+      <div class="ytb-item"><div class="yl">賞与合計</div><div class="yv b">¥${fmtM(sm.bonusGross)}</div></div>
+    </div>
+    <div class="month-grid">`;
+
+  for (let m = 1; m <= 12; m++) {
+    const rec = S.allData.find(d => d.year === year && d.month === m);
+    const hasData = !!rec;
+    const sg = rec ? +rec.salaryGross||0 : 0;
+    const sn = rec ? +rec.salaryNet||0   : 0;
+    const bg = rec ? +rec.bonusGross||0  : 0;
+    const bn = rec ? +rec.bonusNet||0    : 0;
+    const hasBonus = bg > 0;
+
+    html += `<div class="month-row${hasData?'':' no-data'}" onclick="openMonth(${year},${m})">
+      <div class="month-num">${String(m).padStart(2,'0')}</div>
+      <div class="month-divider"></div>
+      <div class="month-data">
+        ${hasData ? `
+        <div class="month-row-amounts">
+          <div class="amt-item"><div class="al">💴 給与額面</div><div class="av g">¥${N(sg)}</div></div>
+          <div class="amt-item"><div class="al">💴 給与手取</div><div class="av n">¥${N(sn)}</div></div>
+          <div class="amt-item"><div class="al">🎁 賞与額面</div><div class="av${hasBonus?' bg':' empty'}">${hasBonus?'¥'+N(bg):'—'}</div></div>
+          <div class="amt-item"><div class="al">🎁 賞与手取</div><div class="av${hasBonus?' bn':' empty'}">${hasBonus?'¥'+N(bn):'—'}</div></div>
+        </div>
+        ${rec.memo?`<div style="font-size:10px;color:var(--muted);margin-top:4px">${eh(rec.memo)}</div>`:''}
+        ` : `<div class="month-empty">タップして入力</div>`}
+      </div>
+      <div class="month-arrow">›</div>
+    </div>`;
+  }
+  html += `</div>`;
+  setContent(html);
+}
+
+// ════════════════════════════════════════
+//  入力画面
+// ════════════════════════════════════════
+function openMonth(year, month) {
+  S.editKey = { year, month };
+  S.detailFields = {};
+  S.detailOpen = false;
+  const rec = S.allData.find(d => d.year === year && d.month === month) || {};
+
+  updateHdr(`${year}年${month}月`, [
+    `<button class="hdr-btn" onclick="openYear(${year})">
+      <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    </button>`
+  ]);
+
+  const v = k => rec[k] || '';
+
+  // 詳細フィールド（設定から生成）
+  const fields = S.config.fields || [];
+  const incFields = fields.filter(f => f.category === 'income');
+  const dedFields = fields.filter(f => f.category === 'deduction');
+
+  const detailRow = f => {
+    const stored = rec.details ? (rec.details[f.key] || '') : '';
+    return `<div class="detail-row">
+      <span class="detail-row-lbl">${eh(f.label)}</span>
+      <div class="inp-wrap" style="width:148px;flex-shrink:0">
+        <span class="inp-yen" style="font-size:13px">¥</span>
+        <input type="number" inputmode="numeric" class="inp-field" style="width:148px;font-size:14px;padding:7px 8px 7px 22px"
+          placeholder="0" data-key="${f.key}" value="${stored}" oninput="onDetailInput('${f.key}',this.value)">
+      </div>
+    </div>`;
+  };
+
+  const detailPanel = fields.length === 0 ? `
+    <div style="text-align:center;padding:16px 0;color:var(--muted);font-size:13px">
+      設定タブで給与項目を追加してください
+    </div>` : `
+    ${incFields.length ? `<div class="detail-section-lbl inc">📥 支給項目</div>${incFields.map(detailRow).join('')}` : ''}
+    ${dedFields.length ? `<div class="detail-section-lbl ded">📤 控除項目</div>${dedFields.map(detailRow).join('')}` : ''}
+    <div class="detail-calc-bar">
+      <div class="dcb-item"><div class="dl">支給合計</div><div class="dv g" id="dc-inc">¥0</div></div>
+      <div class="dcb-item"><div class="dl">控除合計</div><div class="dv" style="color:#fca5a5" id="dc-ded">¥0</div></div>
+      <div class="dcb-item"><div class="dl">→ 推計 額面</div><div class="dv g" id="dc-gross">¥0</div></div>
+      <div class="dcb-item"><div class="dl">→ 推計 手取り</div><div class="dv n" id="dc-net">¥0</div></div>
+    </div>`;
+
+  const html = `
+    <div class="input-page">
+      <div class="back-row" style="padding-top:6px">
+        <button class="back-btn" onclick="openYear(${year})">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+          ${year}年
+        </button>
+        <span class="back-title">${month}月</span>
+      </div>
+
+      <div class="month-label-big">
+        <div class="ml-m">${String(month).padStart(2,'0')}</div>
+        <div class="ml-y">${year}年</div>
+      </div>
+
+      <!-- 給与 -->
+      <div class="inp-section">
+        <div class="inp-section-title">💴 給与</div>
+        <div class="inp-card">
+          <div class="inp-row">
+            <div class="inp-lbl">支給額<span class="sublbl">額面・税引前</span></div>
+            <div class="inp-wrap">
+              <span class="inp-yen">¥</span>
+              <input type="number" inputmode="numeric" class="inp-field" id="f-sg" value="${v('salaryGross')}" placeholder="0" oninput="updateCalc()">
+            </div>
+          </div>
+          <div class="inp-row">
+            <div class="inp-lbl">手取り<span class="sublbl">税引後・振込額</span></div>
+            <div class="inp-wrap">
+              <span class="inp-yen">¥</span>
+              <input type="number" inputmode="numeric" class="inp-field" id="f-sn" value="${v('salaryNet')}" placeholder="0" oninput="updateCalc()">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 詳細入力トグル -->
+      <button class="detail-toggle" id="detail-toggle-btn" onclick="toggleDetail()">
+        <span>📋 詳細を入力する（基本給・手当・控除）</span>
+        <span class="arrow">▼</span>
+      </button>
+      <div class="detail-panel" id="detail-panel">
+        ${detailPanel}
+      </div>
+
+      <!-- 賞与 -->
+      <div class="inp-section">
+        <div class="inp-section-title">🎁 賞与（ない月は空欄でOK）</div>
+        <div class="inp-card">
+          <div class="inp-row">
+            <div class="inp-lbl">賞与支給額<span class="sublbl">額面・税引前</span></div>
+            <div class="inp-wrap">
+              <span class="inp-yen">¥</span>
+              <input type="number" inputmode="numeric" class="inp-field" id="f-bg" value="${v('bonusGross')}" placeholder="0" oninput="updateCalc()">
+            </div>
+          </div>
+          <div class="inp-row">
+            <div class="inp-lbl">賞与手取り<span class="sublbl">税引後・振込額</span></div>
+            <div class="inp-wrap">
+              <span class="inp-yen">¥</span>
+              <input type="number" inputmode="numeric" class="inp-field" id="f-bn" value="${v('bonusNet')}" placeholder="0" oninput="updateCalc()">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- メモ -->
+      <div class="inp-section">
+        <div class="inp-section-title">メモ</div>
+        <div class="inp-card">
+          <div class="inp-row">
+            <input type="text" class="inp-memo" id="f-memo" value="${eh(v('memo'))}" placeholder="例: 昇給・残業多め など" maxlength="50">
+          </div>
+        </div>
+      </div>
+
+      <!-- 計算バー -->
+      <div class="calc-bar" id="calc-bar">
+        <div class="cb-item"><div class="cl">給与(額面)</div><div class="cv g" id="cb-sg">¥0</div></div>
+        <div class="cb-item"><div class="cl">給与(手取)</div><div class="cv n" id="cb-sn">¥0</div></div>
+        <div class="cb-item"><div class="cl">賞与(額面)</div><div class="cv b" id="cb-bg">—</div></div>
+        <div class="cb-item"><div class="cl">月合計(手取)</div><div class="cv n" id="cb-total">¥0</div></div>
+      </div>
+
+      <button class="btn-save" onclick="saveMonth()" id="save-btn">保存する</button>
+      ${rec.id ? `<button class="btn-delete" onclick="deleteMonth()">このデータを削除</button>` : ''}
+    </div>`;
+
+  setContent(html);
+  // 保存済み詳細データを復元
+  if (rec.details) {
+    S.detailFields = {...rec.details};
+    // 詳細が入力済みなら自動で開く
+    if (Object.values(rec.details).some(v => +v > 0)) {
+      setTimeout(() => toggleDetail(), 50);
+    }
+  }
+  updateCalc();
+}
+
+function toggleDetail() {
+  S.detailOpen = !S.detailOpen;
+  const btn = document.getElementById('detail-toggle-btn');
+  const panel = document.getElementById('detail-panel');
+  if (!btn || !panel) return;
+  btn.classList.toggle('open', S.detailOpen);
+  panel.classList.toggle('open', S.detailOpen);
+  btn.querySelector('span:last-child').textContent = S.detailOpen ? '▲ 詳細を閉じる' : '▼ 詳細を入力する（基本給・手当・控除）';
+}
+
+function onDetailInput(key, val) {
+  S.detailFields[key] = val;
+  // 詳細から支給合計・控除合計を自動計算してメイン欄に反映
+  const fields = S.config.fields || [];
+  let inc = 0, ded = 0;
+  fields.forEach(f => {
+    const v = parseInt(S.detailFields[f.key]) || 0;
+    if (f.category === 'income') inc += v;
+    else ded += v;
+  });
+  // 詳細計算バーを更新
+  const el = id => document.getElementById(id);
+  if (el('dc-inc'))   el('dc-inc').textContent   = '¥' + N(inc);
+  if (el('dc-ded'))   el('dc-ded').textContent   = '¥' + N(ded);
+  if (el('dc-gross')) el('dc-gross').textContent = '¥' + N(inc);
+  if (el('dc-net'))   el('dc-net').textContent   = '¥' + N(inc - ded);
+  // メイン欄に自動反映
+  const sgEl = document.getElementById('f-sg');
+  const snEl = document.getElementById('f-sn');
+  if (sgEl && !sgEl.dataset.manual) sgEl.value = inc || '';
+  if (snEl && !snEl.dataset.manual) snEl.value = (inc - ded) || '';
+  updateCalc();
+}
+
+function updateCalc() {
+  const sg = parseInt(document.getElementById('f-sg').value)||0;
+  const sn = parseInt(document.getElementById('f-sn').value)||0;
+  const bg = parseInt(document.getElementById('f-bg').value)||0;
+  const bn = parseInt(document.getElementById('f-bn').value)||0;
+  document.getElementById('cb-sg').textContent = '¥'+N(sg);
+  document.getElementById('cb-sn').textContent = '¥'+N(sn);
+  document.getElementById('cb-bg').textContent = bg ? '¥'+N(bg) : '—';
+  document.getElementById('cb-total').textContent = '¥'+N(sn+bn);
+}
+
+async function saveMonth() {
+  const {year, month} = S.editKey;
+  const sg = parseInt(document.getElementById('f-sg').value)||0;
+  const sn = parseInt(document.getElementById('f-sn').value)||0;
+  const bg = parseInt(document.getElementById('f-bg').value)||0;
+  const bn = parseInt(document.getElementById('f-bn').value)||0;
+  const memo = document.getElementById('f-memo').value.trim();
+
+  if (!sg && !sn && !bg && !bn) { toast('❌ 金額を入力してください'); return; }
+
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true; btn.textContent = '保存中...';
+
+  const record = { year, month, salaryGross:sg, salaryNet:sn, bonusGross:bg, bonusNet:bn, memo, details: S.detailFields };
+
+  try {
+    await api({ action:'save', record });
+    // ローカルにも反映
+    const idx = S.allData.findIndex(d => d.year===year && d.month===month);
+    if (idx >= 0) S.allData[idx] = {...S.allData[idx], ...record};
+    else S.allData.push({ id: Date.now().toString(), ...record });
+
+    // 確認モーダル
+    showConfirm({year, month, sg, sn, bg, bn, memo});
+  } catch(e) {
+    toast('❌ 保存に失敗しました');
+    btn.disabled = false; btn.textContent = '保存する';
+  }
+}
+
+function showConfirm({year,month,sg,sn,bg,bn,memo}) {
+  const html = `<div class="confirm-overlay" id="save-ok-overlay">
+    <div class="confirm-sheet">
+      <div style="text-align:center;font-size:44px;margin-bottom:8px">✅</div>
+      <div style="text-align:center;font-size:17px;font-weight:700;margin-bottom:16px">保存しました</div>
+      <div style="background:var(--paper);border-radius:12px;padding:14px 16px;margin-bottom:20px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:12px;color:var(--muted)">対象</span>
+          <span style="font-size:13px;font-weight:700">${year}年${month}月</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+          <span style="font-size:12px;color:var(--muted)">💴 給与額面</span>
+          <span style="font-family:'DM Mono',monospace;font-size:14px;font-weight:500;color:var(--gross)">¥${N(sg)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:${bg?'6px':'0'}">
+          <span style="font-size:12px;color:var(--muted)">💴 給与手取り</span>
+          <span style="font-family:'DM Mono',monospace;font-size:14px;font-weight:500;color:var(--net)">¥${N(sn)}</span>
+        </div>
+        ${bg ? `
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;padding-top:6px;border-top:1px solid var(--border)">
+          <span style="font-size:12px;color:var(--muted)">🎁 賞与額面</span>
+          <span style="font-family:'DM Mono',monospace;font-size:14px;font-weight:500;color:var(--bonus-gross)">¥${N(bg)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <span style="font-size:12px;color:var(--muted)">🎁 賞与手取り</span>
+          <span style="font-family:'DM Mono',monospace;font-size:14px;font-weight:500;color:var(--bonus-net)">¥${N(bn)}</span>
+        </div>` : ''}
+        ${memo ? `<div style="display:flex;justify-content:space-between;margin-top:6px;padding-top:6px;border-top:1px solid var(--border)"><span style="font-size:12px;color:var(--muted)">メモ</span><span style="font-size:13px">${eh(memo)}</span></div>` : ''}
+      </div>
+      <button onclick="document.getElementById('save-ok-overlay').remove();openYear(${year})"
+        style="width:100%;padding:14px;background:var(--ink);color:white;border:none;border-radius:12px;font-size:16px;font-weight:700;font-family:inherit;cursor:pointer">
+        月次一覧に戻る
+      </button>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+async function deleteMonth() {
+  const {year, month} = S.editKey;
+  if (!confirm(`${year}年${month}月のデータを削除しますか？`)) return;
+  try {
+    const rec = S.allData.find(d => d.year===year && d.month===month);
+    if (rec) {
+      await api({ action:'save', record: {year, month, salaryGross:0, salaryNet:0, bonusGross:0, bonusNet:0, memo:''} });
+      S.allData = S.allData.filter(d => !(d.year===year && d.month===month));
+    }
+    toast('🗑 削除しました');
+    openYear(year);
+  } catch(e) { toast('❌ 削除に失敗しました'); }
+}
+
+// ════════════════════════════════════════
+//  グラフ
+// ════════════════════════════════════════
+function renderGraph() {
+  const years = getYears();
+  if (!years.length) { setContent('<div class="empty-state" style="padding:80px 24px"><div class="empty-icon">📊</div><p>データがありません</p></div>'); return; }
+  if (!years.includes(S.graphYear)) S.graphYear = years[0];
+
+  let html = `<div class="graph-page">
+    <div class="graph-year-nav">
+      <button class="yr-btn" id="g-prev" onclick="shiftGY(-1)">‹</button>
+      <span class="yr-lbl" id="g-yr-lbl">${S.graphYear}年</span>
+      <button class="yr-btn" id="g-next" onclick="shiftGY(+1)">›</button>
+    </div>
+    <div class="sub-tabs">
+      <button class="sub-tab${S.graphTab==='monthly'?' active':''}" id="st-monthly" onclick="setGTab('monthly')">📅 月次推移</button>
+      <button class="sub-tab${S.graphTab==='compare'?' active':''}" id="st-compare" onclick="setGTab('compare')">🏆 年収比較</button>
+    </div>
+    <div id="g-monthly" style="display:${S.graphTab==='monthly'?'block':'none'}">
+      <div class="kpi-grid" id="kpi-grid"></div>
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-hdr"><h2>📊 月次グラフ（タップで詳細）</h2></div>
+        <div class="card-body" style="padding:10px 8px">
+          <div class="chart-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:var(--gross)"></div>給与額面</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--net)"></div>給与手取</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--bonus-gross)"></div>賞与</div>
+          </div>
+          <div class="chart-wrap"><canvas id="c-monthly"></canvas><div class="chart-tip" id="tip-m"></div></div>
+        </div>
+      </div>
+    </div>
+    <div id="g-compare" style="display:${S.graphTab==='compare'?'block':'none'}">
+      <div class="card" style="margin-bottom:12px"><div class="card-hdr"><h2>🏆 年収比較</h2></div><div id="cmp-list"></div></div>
+      <div class="card">
+        <div class="card-hdr"><h2>📈 年収推移</h2></div>
+        <div class="card-body" style="padding:10px 8px">
+          <div class="chart-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:var(--gross)"></div>年収(額面)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--net)"></div>年収(手取)</div>
+          </div>
+          <div class="chart-wrap"><canvas id="c-yearly"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  setContent(html);
   refreshGraph();
 }
 
-function getYears() {
-  const ys=[...new Set(state.allSalaries.map(s=>+s.year))].sort((a,b)=>a-b);
-  return ys.length?ys:[new Date().getFullYear()];
-}
-
 function refreshGraph() {
-  const yrs=getYears(), yr=state.graphYear;
-  document.getElementById('graph-yr-lbl').textContent=yr+'年';
-  document.getElementById('btn-prev-yr').disabled=yrs.indexOf(yr)<=0;
-  document.getElementById('btn-next-yr').disabled=yrs.indexOf(yr)>=yrs.length-1;
-  const yd=state.allSalaries.filter(s=>+s.year===yr);
-  renderKPI(yd, yr);
-  if(state.graphTab==='monthly'){renderMonthlyChart(yd,yr);renderMonthlyList(yd);}
-  else{renderYearCmp();renderYearlyLine();}
+  const yrs = getYears();
+  document.getElementById('g-yr-lbl').textContent = S.graphYear + '年';
+  document.getElementById('g-prev').disabled = yrs.indexOf(S.graphYear) >= yrs.length-1;
+  document.getElementById('g-next').disabled = yrs.indexOf(S.graphYear) <= 0;
+  const yd = S.allData.filter(d => d.year === S.graphYear);
+  renderKPI(yd, S.graphYear);
+  if (S.graphTab === 'monthly') renderMonthlyChart(yd, S.graphYear);
+  else { renderCmp(); renderYearlyLine(); }
 }
-
-function shiftGraphYear(d) {
-  const yrs=getYears(), i=yrs.indexOf(state.graphYear);
-  const ni=i+d; if(ni<0||ni>=yrs.length)return;
-  state.graphYear=yrs[ni]; refreshGraph();
+function shiftGY(d) {
+  const yrs = getYears(), i = yrs.indexOf(S.graphYear);
+  const ni = i - d; if(ni<0||ni>=yrs.length) return;
+  S.graphYear = yrs[ni]; refreshGraph();
 }
-
-function setGraphTab(t) {
-  state.graphTab=t;
-  ['monthly','compare'].forEach(k=>{
-    document.getElementById('st-'+k).classList.toggle('active',k===t);
-    document.getElementById('gv-'+k).style.display=k===t?'block':'none';
+function setGTab(t) {
+  S.graphTab = t;
+  ['monthly','compare'].forEach(k => {
+    document.getElementById('st-'+k).classList.toggle('active', k===t);
+    document.getElementById('g-'+k).style.display = k===t?'block':'none';
   });
-  const yd=state.allSalaries.filter(s=>+s.year===state.graphYear);
-  if(t==='monthly'){renderMonthlyChart(yd,state.graphYear);renderMonthlyList(yd);}
-  else{renderYearCmp();renderYearlyLine();}
+  const yd = S.allData.filter(d => d.year===S.graphYear);
+  if (t==='monthly') renderMonthlyChart(yd, S.graphYear);
+  else { renderCmp(); renderYearlyLine(); }
 }
 
-/* KPI cards */
 function renderKPI(yd, yr) {
-  const gSum=yd.reduce((a,s)=>a+(+s.gross||0),0), nSum=yd.reduce((a,s)=>a+(+s.net||0),0);
-  const salaryRecs=yd.filter(s=>(s.kind||'salary')==='salary');
-  const bonusRecs =yd.filter(s=>s.kind==='bonus');
-  const bonusSum  =bonusRecs.reduce((a,s)=>a+(+s.gross||0),0);
-  const salarySum =salaryRecs.reduce((a,s)=>a+(+s.gross||0),0);
-  const avg=salaryRecs.length?Math.round(salarySum/salaryRecs.length):0;
-  const prev=state.allSalaries.filter(s=>+s.year===yr-1).reduce((a,s)=>a+(+s.gross||0),0);
-  const delta=prev?((gSum-prev)/prev*100).toFixed(1):null;
-  const dStr=delta===null?'—':(+delta>=0?`▲${delta}%`:`▼${Math.abs(delta)}%`);
-  const dc=delta===null?'var(--muted)':(+delta>=0?'var(--income)':'var(--danger)');
-  document.getElementById('kpi-grid').innerHTML=`
-    <div class="kpi-card g"><div class="kl">年収合計（額面）</div><div class="kv">¥${fmtM(gSum)}</div><div class="ks" style="color:${dc}">${dStr} 前年比</div></div>
-    <div class="kpi-card n"><div class="kl">年収合計（手取り）</div><div class="kv">¥${fmtM(nSum)}</div><div class="ks">控除率 ${gSum?((gSum-nSum)/gSum*100).toFixed(1):0}%</div></div>
-    <div class="kpi-card a"><div class="kl">給与月平均（額面）</div><div class="kv">¥${fmtM(avg)}</div><div class="ks">${salaryRecs.length}ヶ月分</div></div>
-    <div class="kpi-card d"><div class="kl">賞与合計</div><div class="kv">¥${fmtM(bonusSum)}</div><div class="ks">${bonusRecs.length}回分</div></div>`;
+  const sg = yd.reduce((a,d)=>a+(+d.salaryGross||0),0);
+  const sn = yd.reduce((a,d)=>a+(+d.salaryNet||0),0);
+  const bg = yd.reduce((a,d)=>a+(+d.bonusGross||0),0);
+  const bn = yd.reduce((a,d)=>a+(+d.bonusNet||0),0);
+  const tg = sg+bg, tn = sn+bn;
+  const prev = S.allData.filter(d=>d.year===yr-1).reduce((a,d)=>a+(+d.salaryGross||0)+(+d.bonusGross||0),0);
+  const delta = prev ? ((tg-prev)/prev*100).toFixed(1) : null;
+  const dStr = delta===null?'—':(+delta>=0?`▲${delta}%`:`▼${Math.abs(delta)}%`);
+  const dc = delta===null?'var(--muted)':(+delta>=0?'var(--net)':'var(--danger)');
+  document.getElementById('kpi-grid').innerHTML = `
+    <div class="kpi-card kg"><div class="kl">年収(額面)</div><div class="kv">¥${fmtM(tg)}</div><div class="ks" style="color:${dc}">${dStr} 前年比</div></div>
+    <div class="kpi-card kn"><div class="kl">年収(手取り)</div><div class="kv">¥${fmtM(tn)}</div><div class="ks">控除率 ${tg?((tg-tn)/tg*100).toFixed(1):0}%</div></div>
+    <div class="kpi-card ka"><div class="kl">給与月平均</div><div class="kv">¥${fmtM(yd.length?Math.round(sg/yd.length):0)}</div><div class="ks">${yd.length}ヶ月</div></div>
+    <div class="kpi-card kb"><div class="kl">賞与合計</div><div class="kv">¥${fmtM(bg)}</div><div class="ks">${yd.filter(d=>+d.bonusGross>0).length}回分</div></div>`;
 }
 
-/* Monthly bar chart */
 function renderMonthlyChart(yd, yr) {
-  const cvs=document.getElementById('c-monthly');
-  const dpr=window.devicePixelRatio||1;
-  const W=cvs.parentElement.clientWidth||300, H=200;
-  cvs.width=W*dpr; cvs.height=H*dpr;
-  cvs.style.width=W+'px'; cvs.style.height=H+'px';
-  const ctx=cvs.getContext('2d'); ctx.scale(dpr,dpr);
+  const cvs = document.getElementById('c-monthly');
+  const dpr = window.devicePixelRatio||1, W = cvs.parentElement.clientWidth||300, H = 200;
+  cvs.width=W*dpr; cvs.height=H*dpr; cvs.style.width=W+'px'; cvs.style.height=H+'px';
+  const ctx = cvs.getContext('2d'); ctx.scale(dpr,dpr);
 
-  // 同月に複数レコードある場合は合算、ボーナスがあれば isBonus=true
-  const months=Array.from({length:12},(_,i)=>{
-    const recs=yd.filter(s=>+s.month===i+1);
-    if(!recs.length) return{gross:0,net:0,has:false,isBonus:false};
-    const gross=recs.reduce((a,s)=>a+(+s.gross||0),0);
-    const net  =recs.reduce((a,s)=>a+(+s.net||0),0);
-    const isBonus=recs.some(s=>s.kind==='bonus');
-    return{gross,net,has:true,isBonus};
+  const months = Array.from({length:12},(_,i)=>{
+    const r = yd.find(d=>d.month===i+1);
+    return { sg:r?+r.salaryGross:0, sn:r?+r.salaryNet:0, bg:r?+r.bonusGross:0, bn:r?+r.bonusNet:0, has:!!r };
   });
-  const maxV=Math.max(...months.map(m=>m.gross),1);
+  const maxV = Math.max(...months.map(m=>m.sg+m.bg), 1);
   const PL=6,PR=6,PT=18,PB=26,cW=W-PL-PR,cH=H-PT-PB;
-  const gW=cW/12,bW=Math.min(gW*0.34,13);
+  const gW=cW/12, bW=Math.min(gW*0.28,11);
   ctx.clearRect(0,0,W,H);
 
-  // grid
-  ctx.strokeStyle='#e5e0d8'; ctx.lineWidth=0.8;
+  ctx.strokeStyle='#e2ddd6'; ctx.lineWidth=0.8;
   for(let i=0;i<=4;i++){const y=PT+cH*(1-i/4);ctx.beginPath();ctx.moveTo(PL,y);ctx.lineTo(W-PR,y);ctx.stroke();}
+  ctx.fillStyle='#9ca3af'; ctx.font=`9px "DM Mono"`; ctx.textAlign='right';
+  ctx.fillText('¥'+fmtM(maxV), W-PR, PT-4);
 
-  // value label top
-  const topV=maxV; ctx.fillStyle='#9ca3af'; ctx.font=`9px "DM Mono"`; ctx.textAlign='right';
-  ctx.fillText('¥'+fmtM(topV), W-PR, PT-4);
-
-  // bars
   months.forEach((m,i)=>{
-    const cx=PL+gW*i+gW/2;
-    const drawBar=(v,color,ox)=>{
+    const cx = PL+gW*i+gW/2;
+    const drawBar=(v,color,ox,r2)=>{
       if(!v)return;
-      const bh=(v/maxV)*cH, x=cx-bW-1+ox, y=PT+cH-bh, r=3;
-      ctx.shadowColor=color+'55'; ctx.shadowBlur=5;
-      ctx.fillStyle=color;
+      const bh=(v/maxV)*cH,x=cx-bW*1.5+ox,y=PT+cH-bh,r=2;
+      ctx.shadowColor=color+'44'; ctx.shadowBlur=4; ctx.fillStyle=color;
       ctx.beginPath();
       ctx.moveTo(x+r,y);ctx.lineTo(x+bW-r,y);ctx.quadraticCurveTo(x+bW,y,x+bW,y+r);
       ctx.lineTo(x+bW,y+bh);ctx.lineTo(x,y+bh);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);
-      ctx.closePath(); ctx.fill(); ctx.shadowBlur=0;
+      ctx.closePath();ctx.fill();ctx.shadowBlur=0;
     };
-    const grossColor = m.isBonus ? '#d97706' : '#2563d4';
-    const netColor   = m.isBonus ? '#f59e0b' : '#16a34a';
-    drawBar(m.gross, grossColor, 0);
-    drawBar(m.net,   netColor,   bW+2);
+    drawBar(m.sg,'#1d4ed8',0);
+    drawBar(m.sn,'#059669',bW+1);
+    if(m.bg) drawBar(m.bg,'#b45309',bW*2+2);
     ctx.fillStyle=m.has?'#374151':'#d1d5db';
     ctx.font=`9px "Noto Sans JP"`; ctx.textAlign='center';
     ctx.fillText((i+1)+'月',cx,H-7);
   });
 
-  // tooltip
-  const tip=document.getElementById('tip-monthly');
-  const onTap=e=>{
+  const tip = document.getElementById('tip-m');
+  const onTap = e => {
     const rect=cvs.getBoundingClientRect();
     const cx=(e.touches?e.touches[0].clientX:e.clientX)-rect.left;
     const col=Math.floor((cx-PL)/gW);
     if(col<0||col>11||!months[col].has){tip.classList.remove('vis');return;}
     const m=months[col];
-    const kindLabel=m.isBonus?'🎁 賞与含む':'💴 給与';
-    tip.innerHTML=`<b>${yr}年${col+1}月</b> ${kindLabel}<br>額面 ¥${N(m.gross)}<br>手取 ¥${N(m.net)}<br>控除 ¥${N(m.gross-m.net)}`;
-    tip.style.left=Math.min(cx,W-136)+'px'; tip.style.top=(PT-4)+'px';
-    tip.classList.add('vis'); setTimeout(()=>tip.classList.remove('vis'),2400);
+    tip.innerHTML=`<b>${yr}年${col+1}月</b><br>給与額面 ¥${N(m.sg)}<br>給与手取 ¥${N(m.sn)}${m.bg?`<br>🎁賞与額面 ¥${N(m.bg)}<br>🎁賞与手取 ¥${N(m.bn)}`:''}`;
+    tip.style.left=Math.min(cx,W-150)+'px'; tip.style.top=(PT-4)+'px';
+    tip.classList.add('vis'); setTimeout(()=>tip.classList.remove('vis'),2600);
   };
   cvs.onclick=onTap; cvs.ontouchend=e=>{e.preventDefault();onTap(e);};
 }
 
-/* Monthly list */
-function renderMonthlyList(yd) {
-  const el=document.getElementById('monthly-list');
-  if(!yd.length){el.innerHTML='<div class="empty-state" style="padding:20px"><p>データなし</p></div>';return;}
-  const s=[...yd].sort((a,b)=>+b.month-+a.month);
-  el.innerHTML=s.map(x=>`
-    <div style="display:flex;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border)">
-      <div style="width:30px;font-family:'DM Mono',monospace;font-size:14px;font-weight:700">${String(x.month).padStart(2,'0')}</div>
-      <div style="flex:1;padding-left:10px">
-        <div style="font-family:'DM Mono',monospace;font-size:14px">¥${N(x.gross)}<span style="font-size:10px;color:var(--muted);margin-left:4px">額面</span></div>
-        <div style="font-size:11px;color:var(--muted)">${{salary:'💴',bonus:'🎁',other:'📄'}[x.kind||'salary']||'💴'} 手取 ¥${N(x.net)}${x.memo?' · '+eh(x.memo):''}</div>
-      </div>
-      <div style="text-align:right;font-size:11px;color:var(--muted)">控除<br><b style="font-family:'DM Mono',monospace;color:var(--deduct)">¥${N(+x.gross-+x.net)}</b></div>
-    </div>`).join('')+'<div style="height:1px"></div>';
-}
-
-/* Year compare bars */
-function renderYearCmp() {
-  const el=document.getElementById('year-cmp-list');
-  const yrs=getYears().slice().reverse();
+function renderCmp() {
+  const el = document.getElementById('cmp-list');
+  const yrs = getYears();
   if(!yrs.length){el.innerHTML='<div class="empty-state" style="padding:20px"><p>データなし</p></div>';return;}
-  const ann=yrs.map(y=>{const d=state.allSalaries.filter(s=>+s.year===y);return{year:y,gross:d.reduce((a,s)=>a+(+s.gross||0),0),net:d.reduce((a,s)=>a+(+s.net||0),0),mo:d.length};});
-  const maxG=Math.max(...ann.map(a=>a.gross),1);
+  const ann = yrs.map(y=>{
+    const d=S.allData.filter(s=>s.year===y);
+    const tg=d.reduce((a,s)=>a+(+s.salaryGross||0)+(+s.bonusGross||0),0);
+    const tn=d.reduce((a,s)=>a+(+s.salaryNet||0)+(+s.bonusNet||0),0);
+    return{year:y,tg,tn,mo:d.length};
+  });
+  const maxG=Math.max(...ann.map(a=>a.tg),1);
   el.innerHTML=ann.map((a,i)=>{
-    const prev=ann[i+1]; const delta=prev&&prev.gross?((a.gross-prev.gross)/prev.gross*100).toFixed(1):null;
+    const prev=ann[i+1]; const delta=prev&&prev.tg?((a.tg-prev.tg)/prev.tg*100).toFixed(1):null;
     const cls=delta===null?'flat':(+delta>=0?'up':'down');
     const ds=delta===null?'初年度':(+delta>=0?`+${delta}%`:`${delta}%`);
     return`<div class="cmp-row">
       <div class="cmp-yr">${a.year}</div>
       <div class="cmp-bars">
-        <div class="bar-row"><div class="bar-bg"><div class="bar-fill" style="background:var(--gross-color);width:${(a.gross/maxG*100).toFixed(1)}%"></div></div><div class="bar-amt" style="color:var(--gross-color)">¥${fmtM(a.gross)}</div></div>
-        <div class="bar-row"><div class="bar-bg"><div class="bar-fill" style="background:var(--net-color);width:${(a.net/maxG*100).toFixed(1)}%"></div></div><div class="bar-amt" style="color:var(--net-color)">¥${fmtM(a.net)}</div></div>
+        <div class="bar-row"><div class="bar-bg"><div class="bar-fill" style="background:var(--gross);width:${(a.tg/maxG*100).toFixed(1)}%"></div></div><div class="bar-amt" style="color:var(--gross)">¥${fmtM(a.tg)}</div></div>
+        <div class="bar-row"><div class="bar-bg"><div class="bar-fill" style="background:var(--net);width:${(a.tn/maxG*100).toFixed(1)}%"></div></div><div class="bar-amt" style="color:var(--net)">¥${fmtM(a.tn)}</div></div>
       </div>
       <div class="cmp-right"><span class="delta ${cls}">${ds}</span><span class="cmp-mo">${a.mo}ヶ月</span></div>
     </div>`;
   }).join('');
 }
 
-/* Yearly line chart */
 function renderYearlyLine() {
   const cvs=document.getElementById('c-yearly');
-  const dpr=window.devicePixelRatio||1;
-  const W=cvs.parentElement.clientWidth||300, H=160;
-  cvs.width=W*dpr; cvs.height=H*dpr;
-  cvs.style.width=W+'px'; cvs.style.height=H+'px';
-  const ctx=cvs.getContext('2d'); ctx.scale(dpr,dpr);
-  ctx.clearRect(0,0,W,H);
-  const yrs=getYears();
-  if(yrs.length<2){
-    ctx.fillStyle='#9ca3af'; ctx.font='13px "Noto Sans JP"'; ctx.textAlign='center';
-    ctx.fillText('2年以上のデータが揃うと表示されます',W/2,H/2); return;
-  }
-  const ann=yrs.map(y=>{const d=state.allSalaries.filter(s=>+s.year===y);return{g:d.reduce((a,s)=>a+(+s.gross||0),0),n:d.reduce((a,s)=>a+(+s.net||0),0)};});
+  const dpr=window.devicePixelRatio||1, W=cvs.parentElement.clientWidth||300, H=160;
+  cvs.width=W*dpr;cvs.height=H*dpr;cvs.style.width=W+'px';cvs.style.height=H+'px';
+  const ctx=cvs.getContext('2d');ctx.scale(dpr,dpr);ctx.clearRect(0,0,W,H);
+  const yrs=getYears().slice().reverse();
+  if(yrs.length<2){ctx.fillStyle='#9ca3af';ctx.font='13px "Noto Sans JP"';ctx.textAlign='center';ctx.fillText('2年以上のデータが揃うと表示されます',W/2,H/2);return;}
+  const ann=yrs.map(y=>{const d=S.allData.filter(s=>s.year===y);return{g:d.reduce((a,s)=>a+(+s.salaryGross||0)+(+s.bonusGross||0),0),n:d.reduce((a,s)=>a+(+s.salaryNet||0)+(+s.bonusNet||0),0)};});
   const maxV=Math.max(...ann.map(a=>a.g),1);
   const PL=12,PR=12,PT=14,PB=26,cW=W-PL-PR,cH=H-PT-PB;
-  // grid
-  ctx.strokeStyle='#e5e0d8'; ctx.lineWidth=0.8;
+  ctx.strokeStyle='#e2ddd6';ctx.lineWidth=0.8;
   for(let i=0;i<=4;i++){const y=PT+cH*i/4;ctx.beginPath();ctx.moveTo(PL,y);ctx.lineTo(W-PR,y);ctx.stroke();}
-  // draw line+area
   const drawLine=(vals,color)=>{
     const pts=vals.map((v,i)=>({x:PL+cW*i/(yrs.length-1),y:PT+cH-(v/maxV)*cH}));
-    const grad=ctx.createLinearGradient(0,PT,0,PT+cH);
-    grad.addColorStop(0,color+'40'); grad.addColorStop(1,color+'00');
-    ctx.beginPath(); ctx.moveTo(pts[0].x,PT+cH);
-    pts.forEach(p=>ctx.lineTo(p.x,p.y));
-    ctx.lineTo(pts[pts.length-1].x,PT+cH); ctx.closePath();
-    ctx.fillStyle=grad; ctx.fill();
-    ctx.beginPath(); ctx.strokeStyle=color; ctx.lineWidth=2.5; ctx.lineJoin='round';
-    pts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y)); ctx.stroke();
+    const grad=ctx.createLinearGradient(0,PT,0,PT+cH);grad.addColorStop(0,color+'40');grad.addColorStop(1,color+'00');
+    ctx.beginPath();ctx.moveTo(pts[0].x,PT+cH);pts.forEach(p=>ctx.lineTo(p.x,p.y));ctx.lineTo(pts[pts.length-1].x,PT+cH);ctx.closePath();ctx.fillStyle=grad;ctx.fill();
+    ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=2.5;ctx.lineJoin='round';pts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));ctx.stroke();
     pts.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,4,0,Math.PI*2);ctx.fillStyle='white';ctx.fill();ctx.strokeStyle=color;ctx.lineWidth=2;ctx.stroke();});
-    // value labels
-    ctx.fillStyle=color; ctx.font='9px "DM Mono"'; ctx.textAlign='center';
+    ctx.fillStyle=color;ctx.font='9px "DM Mono"';ctx.textAlign='center';
     pts.forEach((p,i)=>ctx.fillText('¥'+fmtM(vals[i]),p.x,p.y-7));
   };
-  drawLine(ann.map(a=>a.g),'#2563d4');
-  drawLine(ann.map(a=>a.n),'#16a34a');
-  // x labels
-  ctx.fillStyle='#6b7280'; ctx.font='9px "Noto Sans JP"'; ctx.textAlign='center';
+  drawLine(ann.map(a=>a.g),'#1d4ed8');
+  drawLine(ann.map(a=>a.n),'#059669');
+  ctx.fillStyle='#6b7280';ctx.font='9px "Noto Sans JP"';ctx.textAlign='center';
   yrs.forEach((y,i)=>ctx.fillText(y+'年',PL+cW*i/(yrs.length-1),H-8));
 }
 
-/* Utils */
-function N(n){return Number(n||0).toLocaleString();}
-function fmtM(n){const v=Math.round(n/10000);return v>=10000?(v/10000).toFixed(2)+'億':v>=100?(v/100).toFixed(1)+'百万':v+'万';}
-function eh(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+// ════════════════════════════════════════
+//  設定
+// ════════════════════════════════════════
+function renderConfig() {
+  const fields = S.config.fields || [];
+  const html = `<div class="config-page">
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-hdr"><h2>🔗 GAS Web App URL</h2></div>
+      <div class="card-body">
+        <div class="field-group">
+          <label class="field-label">デプロイURL</label>
+          <input type="url" class="field-input" id="gas-url-inp" value="${GAS_URL===GAS_INIT?'':GAS_URL}" placeholder="https://script.google.com/macros/s/..." style="font-size:13px">
+        </div>
+        <button class="btn-primary" onclick="saveGasUrl()" style="margin:0">URLを保存</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-hdr">
+        <h2>📝 詳細入力の項目管理</h2>
+        <button class="btn-secondary" style="font-size:12px;padding:6px 12px" onclick="openAddModal()">＋ 追加</button>
+      </div>
+      <div id="cfg-fields-list">
+        ${fields.length === 0
+          ? '<div class="empty-state" style="padding:20px"><p>項目がありません</p></div>'
+          : fields.map((f,i) => `
+            <div class="cfg-row">
+              <span style="flex:1;font-size:14px;font-weight:500">${eh(f.label)}</span>
+              <span class="cat-badge cat-${f.category}">${f.category==='income'?'支給':'控除'}</span>
+              <button class="btn-danger2" onclick="removeCfgField(${i})">削除</button>
+            </div>`).join('')}
+      </div>
+      <div style="padding:12px 16px">
+        <button class="btn-primary" onclick="saveCfg()" style="margin:0">項目設定を保存</button>
+      </div>
+    </div>
+  </div>`;
+  setContent(html);
+}
+
+function removeCfgField(i) {
+  S.config.fields.splice(i, 1);
+  renderConfig();
+}
+
+async function saveCfg() {
+  try {
+    await api({ action:'saveConfig', config: S.config });
+    toast('✅ 項目設定を保存しました');
+  } catch(e) { toast('❌ 保存に失敗しました'); }
+}
+
+function saveGasUrl() {
+  const u = document.getElementById('gas-url-inp').value.trim();
+  if (!u.startsWith('https://script.google.com')) { toast('❌ 正しいGAS URLを入力してください'); return; }
+  GAS_URL = u; localStorage.setItem('gas_url', u);
+  toast('✅ URLを保存しました');
+  loadAll().then(() => renderYears()).then(() => switchTab('years'));
+}
+
+// ── Modal ──────────────────────────────────────────────────
+function openAddModal(){document.getElementById('new-field-label').value='';document.getElementById('new-field-category').value='income';document.getElementById('add-modal').classList.add('open');setTimeout(()=>document.getElementById('new-field-label').focus(),300);}
+function closeAddModal(e){if(!e||e.target===document.getElementById('add-modal'))document.getElementById('add-modal').classList.remove('open');}
+function addField(){
+  const label = document.getElementById('new-field-label').value.trim();
+  const category = document.getElementById('new-field-category').value;
+  if(!label){ toast('❌ 項目名を入力してください'); return; }
+  if(!S.config.fields) S.config.fields = [];
+  S.config.fields.push({ key: 'c_'+Date.now(), label, category });
+  closeAddModal();
+  renderConfig();
+  toast('✅ 項目を追加しました');
+}
+
+// ── Utils ──────────────────────────────────────────────────
+function setContent(html) { document.getElementById('content').innerHTML = html; }
+function updateHdr(title, btns=[]) {
+  document.querySelector('.hdr-left h1').textContent = title;
+  document.getElementById('hdr-actions').innerHTML = btns.join('');
+}
+function N(n){ return Number(n||0).toLocaleString(); }
+function fmtM(n){ const v=Math.round(n/10000); return v>=10000?(v/10000).toFixed(2)+'億':v>=100?(v/100).toFixed(1)+'百万':v+'万'; }
+function eh(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 let _tt;
-function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),2500);}
+function toast(msg){ const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),2500); }
 </script>
+
 </body>
 </html>
