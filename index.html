@@ -157,6 +157,16 @@
   .cmp-mo { font-size: 10px; color: var(--muted); }
 
   select.field-input { background-image: none; }
+
+  /* kind buttons */
+  .kind-btn { flex:1; padding:9px 4px; border:1.5px solid var(--border); border-radius:10px; background:var(--paper); color:var(--muted); font-size:12px; font-weight:600; font-family:inherit; cursor:pointer; transition:all 0.2s; text-align:center; }
+  .kind-btn.active { border-color:var(--accent); background:#e8eefb; color:var(--accent); }
+  #kind-bonus.active { border-color:#d97706 !important; background:#fef3c7 !important; color:#d97706 !important; }
+  #kind-other.active { border-color:#7c3aed !important; background:#ede9fe !important; color:#7c3aed !important; }
+  .kind-tag { font-size:10px; font-weight:700; padding:2px 7px; border-radius:20px; flex-shrink:0; }
+  .kind-tag.salary { background:#e8eefb; color:var(--accent); }
+  .kind-tag.bonus  { background:#fef3c7; color:#d97706; }
+  .kind-tag.other  { background:#ede9fe; color:#7c3aed; }
 </style>
 </head>
 <body>
@@ -168,7 +178,7 @@ let state = {
   screen: 'input', inputMode: 'quick',
   config: { fields: [] }, allSalaries: [],
   year: new Date().getFullYear(), month: new Date().getMonth() + 1,
-  gross: '', net: '', memo: '', detailFields: {},
+  gross: '', net: '', memo: '', detailFields: {}, kind: 'salary',
   graphYear: new Date().getFullYear(), graphTab: 'monthly',
 };
 
@@ -190,37 +200,38 @@ let demoSalaries = [
   {id:'d2503',year:2025,month:3, gross:452000,net:341000,memo:'昇給'},
   {id:'d2504',year:2025,month:4, gross:460000,net:347000,memo:''},
   {id:'d2505',year:2025,month:5, gross:458000,net:345000,memo:''},
-  {id:'d2506',year:2025,month:6, gross:810000,net:590000,memo:'賞与'},
+  {id:'d2506s',year:2025,month:6, gross:462000,net:349000,memo:'',kind:'salary'},
+  {id:'d2506',year:2025,month:6, gross:810000,net:590000,memo:'賞与',kind:'bonus'},
   {id:'d2507',year:2025,month:7, gross:461000,net:348000,memo:''},
   {id:'d2508',year:2025,month:8, gross:460000,net:347000,memo:''},
   {id:'d2509',year:2025,month:9, gross:462000,net:349000,memo:''},
   {id:'d2510',year:2025,month:10,gross:461000,net:348000,memo:''},
   {id:'d2511',year:2025,month:11,gross:463000,net:350000,memo:''},
-  {id:'d2512',year:2025,month:12,gross:820000,net:598000,memo:'賞与'},
+  {id:'d2512',year:2025,month:12,gross:820000,net:598000,memo:'賞与',kind:'bonus'},
   {id:'d2401',year:2024,month:1, gross:430000,net:325000,memo:''},
   {id:'d2402',year:2024,month:2, gross:432000,net:326000,memo:''},
   {id:'d2403',year:2024,month:3, gross:431000,net:326000,memo:''},
   {id:'d2404',year:2024,month:4, gross:435000,net:328000,memo:''},
   {id:'d2405',year:2024,month:5, gross:433000,net:327000,memo:''},
-  {id:'d2406',year:2024,month:6, gross:780000,net:568000,memo:'賞与'},
+  {id:'d2406',year:2024,month:6, gross:780000,net:568000,memo:'賞与',kind:'bonus'},
   {id:'d2407',year:2024,month:7, gross:436000,net:329000,memo:''},
   {id:'d2408',year:2024,month:8, gross:435000,net:328000,memo:''},
   {id:'d2409',year:2024,month:9, gross:437000,net:330000,memo:''},
   {id:'d2410',year:2024,month:10,gross:436000,net:329000,memo:''},
   {id:'d2411',year:2024,month:11,gross:438000,net:331000,memo:''},
-  {id:'d2412',year:2024,month:12,gross:790000,net:575000,memo:'賞与'},
+  {id:'d2412',year:2024,month:12,gross:790000,net:575000,memo:'賞与',kind:'bonus'},
   {id:'d2301',year:2023,month:1, gross:415000,net:315000,memo:''},
   {id:'d2302',year:2023,month:2, gross:416000,net:315000,memo:''},
   {id:'d2303',year:2023,month:3, gross:415000,net:315000,memo:''},
   {id:'d2304',year:2023,month:4, gross:418000,net:317000,memo:''},
   {id:'d2305',year:2023,month:5, gross:417000,net:316000,memo:''},
-  {id:'d2306',year:2023,month:6, gross:750000,net:548000,memo:'賞与'},
+  {id:'d2306',year:2023,month:6, gross:750000,net:548000,memo:'賞与',kind:'bonus'},
   {id:'d2307',year:2023,month:7, gross:419000,net:318000,memo:''},
   {id:'d2308',year:2023,month:8, gross:418000,net:317000,memo:''},
   {id:'d2309',year:2023,month:9, gross:420000,net:318000,memo:''},
   {id:'d2310',year:2023,month:10,gross:419000,net:317000,memo:''},
   {id:'d2311',year:2023,month:11,gross:421000,net:319000,memo:''},
-  {id:'d2312',year:2023,month:12,gross:760000,net:555000,memo:'賞与'},
+  {id:'d2312',year:2023,month:12,gross:760000,net:555000,memo:'賞与',kind:'bonus'},
 ];
 function demoApi(method, params) {
   if (params.action==='getConfig') return Promise.resolve({fields:[
@@ -264,10 +275,20 @@ function demoApi(method, params) {
     <!-- ══ 入力 ══ -->
     <div class="screen active" id="screen-input">
       <div id="url-warn" class="url-banner" style="display:none">⚠️ <span>デモモード中。<a href="#" onclick="navigate('config')">設定</a>でGAS URLを設定してください。</span></div>
-      <div class="card"><div class="card-body"><div style="display:flex;gap:10px">
-        <div class="field-group" style="flex:1"><label class="field-label">年</label><select class="field-input" id="sel-year" onchange="state.year=this.value"></select></div>
-        <div class="field-group" style="flex:1"><label class="field-label">月</label><select class="field-input" id="sel-month" onchange="state.month=this.value"></select></div>
-      </div></div></div>
+      <div class="card"><div class="card-body">
+        <div style="display:flex;gap:10px;margin-bottom:12px">
+          <div class="field-group" style="flex:1;margin-bottom:0"><label class="field-label">年</label><select class="field-input" id="sel-year" onchange="state.year=this.value"></select></div>
+          <div class="field-group" style="flex:1;margin-bottom:0"><label class="field-label">月</label><select class="field-input" id="sel-month" onchange="state.month=this.value"></select></div>
+        </div>
+        <div class="field-group" style="margin-bottom:0">
+          <label class="field-label">種別</label>
+          <div style="display:flex;gap:6px">
+            <button class="kind-btn active" id="kind-salary" onclick="setKind('salary')">💴 給与</button>
+            <button class="kind-btn" id="kind-bonus" onclick="setKind('bonus')">🎁 賞与</button>
+            <button class="kind-btn" id="kind-other" onclick="setKind('other')">📄 その他</button>
+          </div>
+        </div>
+      </div></div>
       <div class="mode-toggle">
         <button class="mode-btn active" id="mode-quick" onclick="setMode('quick')">⚡ クイック</button>
         <button class="mode-btn" id="mode-detail" onclick="setMode('detail')">📋 詳細入力</button>
@@ -395,6 +416,13 @@ function initYM() {
   for(let m=1;m<=12;m++){const o=new Option(m+'月',m);if(m===now.getMonth()+1)o.selected=true;sm.add(o);}
   state.year=now.getFullYear(); state.month=now.getMonth()+1;
 }
+function setKind(k) {
+  state.kind = k;
+  ['salary','bonus','other'].forEach(id => {
+    const b = document.getElementById('kind-'+id);
+    if(b) b.classList.toggle('active', id===k);
+  });
+}
 function loadGasUrl() {
   const s=localStorage.getItem('gas_url');
   if(s&&s!==GAS_URL_INIT){GAS_URL=s;document.getElementById('gas-url-input').value=s;}
@@ -460,7 +488,7 @@ async function submitSalary() {
   if(!state.gross&&!state.net){toast('❌ 金額を入力してください');return;}
   btn.disabled=true; btn.textContent='保存中...';
   try {
-    await api('POST',{action:'addSalary',data:{year:+state.year,month:+state.month,type:state.inputMode,fields:state.detailFields,gross:state.gross,net:state.net,memo:state.memo}});
+    await api('POST',{action:'addSalary',data:{year:+state.year,month:+state.month,type:state.inputMode,kind:state.kind,fields:state.detailFields,gross:state.gross,net:state.net,memo:state.memo}});
     toast('✅ 保存しました');
     ['q-gross','q-net','q-memo','d-memo'].forEach(id=>document.getElementById(id).value='');
     state.gross='';state.net='';state.memo='';state.detailFields={};
@@ -482,6 +510,7 @@ async function loadHistory() {
       <div class="hi-month"><div class="m">${String(s.month).padStart(2,'0')}</div><div class="y">${s.year}</div></div>
       <div class="hi-divider"></div>
       <div class="hi-details">
+        ${(()=>{const k=s.kind||"salary";const lbl={"salary":"💴 給与","bonus":"🎁 賞与","other":"📄 その他"};return "<div style=\"margin-bottom:3px\"><span class=\"kind-tag "+k+"\">"+lbl[k]+"</span></div>";})()}
         <div class="hi-gross">¥${N(s.gross)}<span style="font-size:11px;color:var(--muted);margin-left:4px">額面</span></div>
         <div class="hi-net">手取 ¥${N(s.net)}</div>
         ${s.memo?`<div class="hi-memo">${eh(s.memo)}</div>`:''}
@@ -571,16 +600,20 @@ function setGraphTab(t) {
 /* KPI cards */
 function renderKPI(yd, yr) {
   const gSum=yd.reduce((a,s)=>a+(+s.gross||0),0), nSum=yd.reduce((a,s)=>a+(+s.net||0),0);
-  const avg=yd.length?Math.round(gSum/yd.length):0;
+  const salaryRecs=yd.filter(s=>(s.kind||'salary')==='salary');
+  const bonusRecs =yd.filter(s=>s.kind==='bonus');
+  const bonusSum  =bonusRecs.reduce((a,s)=>a+(+s.gross||0),0);
+  const salarySum =salaryRecs.reduce((a,s)=>a+(+s.gross||0),0);
+  const avg=salaryRecs.length?Math.round(salarySum/salaryRecs.length):0;
   const prev=state.allSalaries.filter(s=>+s.year===yr-1).reduce((a,s)=>a+(+s.gross||0),0);
   const delta=prev?((gSum-prev)/prev*100).toFixed(1):null;
   const dStr=delta===null?'—':(+delta>=0?`▲${delta}%`:`▼${Math.abs(delta)}%`);
   const dc=delta===null?'var(--muted)':(+delta>=0?'var(--income)':'var(--danger)');
   document.getElementById('kpi-grid').innerHTML=`
-    <div class="kpi-card g"><div class="kl">年収（額面）</div><div class="kv">¥${fmtM(gSum)}</div><div class="ks" style="color:${dc}">${dStr} 前年比</div></div>
-    <div class="kpi-card n"><div class="kl">年収（手取り）</div><div class="kv">¥${fmtM(nSum)}</div><div class="ks">控除率 ${gSum?((gSum-nSum)/gSum*100).toFixed(1):0}%</div></div>
-    <div class="kpi-card a"><div class="kl">月平均（額面）</div><div class="kv">¥${fmtM(avg)}</div><div class="ks">${yd.length}ヶ月分</div></div>
-    <div class="kpi-card d"><div class="kl">年間控除総額</div><div class="kv">¥${fmtM(gSum-nSum)}</div><div class="ks">年間</div></div>`;
+    <div class="kpi-card g"><div class="kl">年収合計（額面）</div><div class="kv">¥${fmtM(gSum)}</div><div class="ks" style="color:${dc}">${dStr} 前年比</div></div>
+    <div class="kpi-card n"><div class="kl">年収合計（手取り）</div><div class="kv">¥${fmtM(nSum)}</div><div class="ks">控除率 ${gSum?((gSum-nSum)/gSum*100).toFixed(1):0}%</div></div>
+    <div class="kpi-card a"><div class="kl">給与月平均（額面）</div><div class="kv">¥${fmtM(avg)}</div><div class="ks">${salaryRecs.length}ヶ月分</div></div>
+    <div class="kpi-card d"><div class="kl">賞与合計</div><div class="kv">¥${fmtM(bonusSum)}</div><div class="ks">${bonusRecs.length}回分</div></div>`;
 }
 
 /* Monthly bar chart */
@@ -592,9 +625,14 @@ function renderMonthlyChart(yd, yr) {
   cvs.style.width=W+'px'; cvs.style.height=H+'px';
   const ctx=cvs.getContext('2d'); ctx.scale(dpr,dpr);
 
+  // 同月に複数レコードある場合は合算、ボーナスがあれば isBonus=true
   const months=Array.from({length:12},(_,i)=>{
-    const r=yd.find(s=>+s.month===i+1);
-    return{gross:r?+r.gross:0,net:r?+r.net:0,has:!!r};
+    const recs=yd.filter(s=>+s.month===i+1);
+    if(!recs.length) return{gross:0,net:0,has:false,isBonus:false};
+    const gross=recs.reduce((a,s)=>a+(+s.gross||0),0);
+    const net  =recs.reduce((a,s)=>a+(+s.net||0),0);
+    const isBonus=recs.some(s=>s.kind==='bonus');
+    return{gross,net,has:true,isBonus};
   });
   const maxV=Math.max(...months.map(m=>m.gross),1);
   const PL=6,PR=6,PT=18,PB=26,cW=W-PL-PR,cH=H-PT-PB;
@@ -622,8 +660,10 @@ function renderMonthlyChart(yd, yr) {
       ctx.lineTo(x+bW,y+bh);ctx.lineTo(x,y+bh);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);
       ctx.closePath(); ctx.fill(); ctx.shadowBlur=0;
     };
-    drawBar(m.gross,'#2563d4',0);
-    drawBar(m.net,  '#16a34a',bW+2);
+    const grossColor = m.isBonus ? '#d97706' : '#2563d4';
+    const netColor   = m.isBonus ? '#f59e0b' : '#16a34a';
+    drawBar(m.gross, grossColor, 0);
+    drawBar(m.net,   netColor,   bW+2);
     ctx.fillStyle=m.has?'#374151':'#d1d5db';
     ctx.font=`9px "Noto Sans JP"`; ctx.textAlign='center';
     ctx.fillText((i+1)+'月',cx,H-7);
@@ -637,7 +677,8 @@ function renderMonthlyChart(yd, yr) {
     const col=Math.floor((cx-PL)/gW);
     if(col<0||col>11||!months[col].has){tip.classList.remove('vis');return;}
     const m=months[col];
-    tip.innerHTML=`<b>${yr}年${col+1}月</b><br>額面 ¥${N(m.gross)}<br>手取 ¥${N(m.net)}<br>控除 ¥${N(m.gross-m.net)}`;
+    const kindLabel=m.isBonus?'🎁 賞与含む':'💴 給与';
+    tip.innerHTML=`<b>${yr}年${col+1}月</b> ${kindLabel}<br>額面 ¥${N(m.gross)}<br>手取 ¥${N(m.net)}<br>控除 ¥${N(m.gross-m.net)}`;
     tip.style.left=Math.min(cx,W-136)+'px'; tip.style.top=(PT-4)+'px';
     tip.classList.add('vis'); setTimeout(()=>tip.classList.remove('vis'),2400);
   };
@@ -654,7 +695,7 @@ function renderMonthlyList(yd) {
       <div style="width:30px;font-family:'DM Mono',monospace;font-size:14px;font-weight:700">${String(x.month).padStart(2,'0')}</div>
       <div style="flex:1;padding-left:10px">
         <div style="font-family:'DM Mono',monospace;font-size:14px">¥${N(x.gross)}<span style="font-size:10px;color:var(--muted);margin-left:4px">額面</span></div>
-        <div style="font-size:11px;color:var(--muted)">手取 ¥${N(x.net)}${x.memo?' · '+eh(x.memo):''}</div>
+        <div style="font-size:11px;color:var(--muted)">${{salary:'💴',bonus:'🎁',other:'📄'}[x.kind||'salary']||'💴'} 手取 ¥${N(x.net)}${x.memo?' · '+eh(x.memo):''}</div>
       </div>
       <div style="text-align:right;font-size:11px;color:var(--muted)">控除<br><b style="font-family:'DM Mono',monospace;color:var(--deduct)">¥${N(+x.gross-+x.net)}</b></div>
     </div>`).join('')+'<div style="height:1px"></div>';
