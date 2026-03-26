@@ -185,11 +185,13 @@ let state = {
 /* ── API ─────────────────────────────────────────────────── */
 async function api(method, params) {
   if (GAS_URL === GAS_URL_INIT) return demoApi(method, params);
-  if (method === 'GET') {
-    const res = await fetch(GAS_URL + '?' + new URLSearchParams(params));
-    return res.json();
+  // GASはすべてGETで通信（CORS対策）
+  const p = {};
+  for (const k in params) {
+    if (typeof params[k] === 'object') p[k] = JSON.stringify(params[k]);
+    else p[k] = params[k];
   }
-  const res = await fetch(GAS_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(params) });
+  const res = await fetch(GAS_URL + '?' + new URLSearchParams(p));
   return res.json();
 }
 
@@ -488,7 +490,7 @@ async function submitSalary() {
   if(!state.gross&&!state.net){toast('❌ 金額を入力してください');return;}
   btn.disabled=true; btn.textContent='保存中...';
   try {
-    await api('POST',{action:'addSalary',data:{year:+state.year,month:+state.month,type:state.inputMode,kind:state.kind,fields:state.detailFields,gross:state.gross,net:state.net,memo:state.memo}});
+    await api('GET',{action:'addSalary',data:{year:+state.year,month:+state.month,type:state.inputMode,kind:state.kind,fields:state.detailFields,gross:state.gross,net:state.net,memo:state.memo}});
     toast('✅ 保存しました');
     ['q-gross','q-net','q-memo','d-memo'].forEach(id=>document.getElementById(id).value='');
     state.gross='';state.net='';state.memo='';state.detailFields={};
@@ -524,7 +526,7 @@ async function loadHistory() {
 async function delSalary(id,btn) {
   if(!confirm('削除しますか？'))return;
   btn.closest('.history-item').style.opacity='0.4';
-  try{await api('POST',{action:'deleteSalary',id});btn.closest('.history-item').remove();toast('🗑 削除しました');state.allSalaries=[];}
+  try{await api('GET',{action:'deleteSalary',id});btn.closest('.history-item').remove();toast('🗑 削除しました');state.allSalaries=[];}
   catch(e){toast('❌ 削除に失敗しました');btn.closest('.history-item').style.opacity='1';}
 }
 
@@ -541,7 +543,7 @@ function renderConfigList(){
   </div>`).join('');
 }
 function removeField(i){state.config.fields.splice(i,1);renderConfigList();renderDetailFields();}
-async function saveConfig(){try{await api('POST',{action:'saveConfig',config:state.config});toast('✅ 保存しました');renderDetailFields();}catch(e){toast('❌ 失敗');}}
+async function saveConfig(){try{await api('GET',{action:'saveConfig',config:state.config});toast('✅ 保存しました');renderDetailFields();}catch(e){toast('❌ 失敗');}}
 
 /* Modal */
 function openAddModal(){document.getElementById('new-field-label').value='';document.getElementById('new-field-category').value='income';document.getElementById('add-modal').classList.add('open');setTimeout(()=>document.getElementById('new-field-label').focus(),300);}
