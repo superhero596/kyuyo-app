@@ -6,6 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="給与帳">
+<link rel="apple-touch-icon" href="icon.png">
 <title>給与帳</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -262,7 +263,11 @@ html, body { height: 100%; font-family: 'Noto Sans JP', sans-serif; background: 
 
 /* ── Config page ── */
 .config-page { padding: 14px 0 calc(var(--safe-bot) + 16px); }
-.cfg-row { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-bottom: 1px solid var(--border); }
+.cfg-row { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-bottom: 1px solid var(--border); cursor: default; transition: background 0.15s; }
+.cfg-row.dragging { opacity: 0.4; background: var(--paper); }
+.cfg-row.drag-over { background: #e8f0fe; border-top: 2px solid var(--accent); }
+.drag-handle { color: var(--muted); cursor: grab; font-size: 18px; padding: 0 4px; flex-shrink: 0; user-select: none; -webkit-user-select: none; }
+.drag-handle:active { cursor: grabbing; }
 .cfg-row:last-child { border-bottom: none; }
 .cat-badge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 20px; white-space: nowrap; }
 .cat-income { background: #f0fdf4; color: #166534; }
@@ -1189,7 +1194,16 @@ function renderConfig() {
         ${fields.length === 0
           ? '<div class="empty-state" style="padding:20px"><p>項目がありません</p></div>'
           : fields.map((f,i) => `
-            <div class="cfg-row">
+            <div class="cfg-row" draggable="true" data-idx="${i}"
+              ondragstart="onDragStart(event,${i})"
+              ondragover="onDragOver(event)"
+              ondragleave="onDragLeave(event)"
+              ondrop="onDrop(event,${i})"
+              ondragend="onDragEnd(event)"
+              ontouchstart="onTouchStart(event,${i})"
+              ontouchmove="onTouchMove(event)" style="touch-action:none"
+              ontouchend="onTouchEnd(event,${i})">
+              <span class="drag-handle">⠿</span>
               <span style="flex:1;font-size:14px;font-weight:500">${eh(f.label)}</span>
               <span class="cat-badge cat-${f.category}">${f.category==='income'?'支給':'控除'}</span>
               <button class="btn-danger2" onclick="removeCfgField(${i})">削除</button>
@@ -1201,6 +1215,83 @@ function renderConfig() {
     </div>
   </div>`;
   setContent(html);
+}
+
+// ── 項目並び替え（PC: ドラッグ＆ドロップ、iPhone: タッチ）──
+let dragSrcIdx = null;
+let touchSrcIdx = null;
+let touchClone = null;
+
+// PC用
+function onDragStart(e, idx) {
+  dragSrcIdx = idx;
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+function onDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  document.querySelectorAll('.cfg-row').forEach(r => r.classList.remove('drag-over'));
+  e.currentTarget.classList.add('drag-over');
+}
+function onDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+function onDrop(e, idx) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if (dragSrcIdx === null || dragSrcIdx === idx) return;
+  const fields = S.config.fields;
+  const moved = fields.splice(dragSrcIdx, 1)[0];
+  fields.splice(idx, 0, moved);
+  renderConfig();
+  toast('↕ 並び順を変更しました');
+}
+function onDragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+  document.querySelectorAll('.cfg-row').forEach(r => r.classList.remove('drag-over'));
+  dragSrcIdx = null;
+}
+
+// iPhone用タッチ並び替え
+function onTouchStart(e, idx) {
+  touchSrcIdx = idx;
+  const row = e.currentTarget;
+  const rect = row.getBoundingClientRect();
+  touchClone = row.cloneNode(true);
+  touchClone.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;opacity:0.85;z-index:999;pointer-events:none;background:white;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.2);`;
+  document.body.appendChild(touchClone);
+  row.classList.add('dragging');
+}
+function onTouchMove(e) {
+  e.preventDefault();
+  const touch = e.touches[0];
+  if (touchClone) {
+    touchClone.style.top = (touch.clientY - 30) + 'px';
+    touchClone.style.left = (touch.clientX - 150) + 'px';
+  }
+  // どの行の上にいるか判定
+  document.querySelectorAll('.cfg-row').forEach(r => r.classList.remove('drag-over'));
+  const el = document.elementFromPoint(touch.clientX, touch.clientY);
+  const row = el ? el.closest('.cfg-row') : null;
+  if (row) row.classList.add('drag-over');
+}
+function onTouchEnd(e, srcIdx) {
+  if (touchClone) { touchClone.remove(); touchClone = null; }
+  document.querySelectorAll('.cfg-row').forEach(r => {
+    r.classList.remove('dragging');
+    r.classList.remove('drag-over');
+  });
+  const touch = e.changedTouches[0];
+  const el = document.elementFromPoint(touch.clientX, touch.clientY);
+  const targetRow = el ? el.closest('.cfg-row') : null;
+  if (!targetRow) { touchSrcIdx = null; return; }
+  const targetIdx = +targetRow.dataset.idx;
+  if (isNaN(targetIdx) || targetIdx === srcIdx) { touchSrcIdx = null; return; }
+  const fields = S.config.fields;
+  const moved = fields.splice(srcIdx, 1)[0];
+  fields.splice(targetIdx, 0, moved);
+  touchSrcIdx = null;
+  renderConfig();
+  toast('↕ 並び順を変更しました');
 }
 
 function removeCfgField(i) {
