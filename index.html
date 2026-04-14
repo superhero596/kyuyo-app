@@ -1199,11 +1199,11 @@ function renderConfig() {
               ondragover="onDragOver(event)"
               ondragleave="onDragLeave(event)"
               ondrop="onDrop(event,${i})"
-              ondragend="onDragEnd(event)"
-              ontouchstart="onTouchStart(event,${i})"
-              ontouchmove="onTouchMove(event)" style="touch-action:none"
-              ontouchend="onTouchEnd(event,${i})">
-              <span class="drag-handle">⠿</span>
+              ondragend="onDragEnd(event)">
+              <span class="drag-handle" style="touch-action:none"
+                ontouchstart="onTouchStart(event,${i})"
+                ontouchmove="onTouchMove(event)"
+                ontouchend="onTouchEnd(event,${i})">⠿</span>
               <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">
                 <input type="text" value="${eh(f.label)}"
                   style="font-size:14px;font-weight:500;border:none;background:transparent;padding:0;width:100%;font-family:inherit;color:var(--ink);border-bottom:1px dashed transparent;"
