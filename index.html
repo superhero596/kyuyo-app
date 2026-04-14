@@ -1359,7 +1359,7 @@ function updateHdr(title, btns=[]) {
   document.getElementById('hdr-actions').innerHTML = btns.join('');
 }
 function N(n){ return Number(n||0).toLocaleString(); }
-function fmtM(n){ const v=Math.round(n/10000); return v>=10000?(v/10000).toFixed(2)+'億':v>=100?(v/100).toFixed(1)+'百万':v+'万'; }
+function fmtM(n){ const v=n/10000; return v>=10000?(v/10000).toFixed(1)+'億':(v).toFixed(1)+'万'; }
 function eh(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 let _tt;
 function toast(msg){ const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),2500); }
